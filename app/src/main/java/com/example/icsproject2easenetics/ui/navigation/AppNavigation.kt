@@ -5,10 +5,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.icsproject2easenetics.ui.screens.AuthenticatorSetupScreen
 import com.example.icsproject2easenetics.ui.screens.DashboardScreen
 import com.example.icsproject2easenetics.ui.screens.LoginScreen
+import com.example.icsproject2easenetics.ui.screens.MfaVerificationScreen
 import com.example.icsproject2easenetics.ui.screens.OnboardingScreen
-import com.example.icsproject2easenetics.ui.screens.ProfileScreen  // ADD THIS IMPORT
+import com.example.icsproject2easenetics.ui.screens.ProfileScreen
 import com.example.icsproject2easenetics.ui.screens.RegisterScreen
 import com.example.icsproject2easenetics.ui.viewmodels.AuthViewModel
 
@@ -37,8 +39,23 @@ fun AppNavigation() {
         composable("login") {
             LoginScreen(
                 onLoginSuccess = {
-                    navController.navigate("dashboard") {
-                        popUpTo("login") { inclusive = true }
+                    // Check if MFA verification is required
+                    val currentUser = authViewModel.currentUser.value
+                    currentUser?.let { user ->
+                        // In a real app, you would check the user's MFA status from Firestore
+                        // For now, we'll check the MFA verification state
+                        if (authViewModel.mfaVerificationState.value is com.example.icsproject2easenetics.ui.viewmodels.MfaVerificationState.Required) {
+                            navController.navigate("mfa_verification")
+                        } else {
+                            navController.navigate("dashboard") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+                    } ?: run {
+                        // If no user, go to dashboard directly
+                        navController.navigate("dashboard") {
+                            popUpTo("login") { inclusive = true }
+                        }
                     }
                 },
                 onNavigateToRegister = {
@@ -77,12 +94,11 @@ fun AppNavigation() {
                     println("Chatbot clicked")
                 },
                 onProfileClick = {
-                    navController.navigate("profile") // ADD THIS
+                    navController.navigate("profile")
                 }
             )
         }
 
-        // ADD THIS NEW COMPOSABLE - MAKE SURE IT'S INSIDE THE NavHost BRACES
         composable("profile") {
             ProfileScreen(
                 onBack = {
@@ -93,7 +109,41 @@ fun AppNavigation() {
                     navController.navigate("login") {
                         popUpTo("dashboard") { inclusive = true }
                     }
-                }
+                },
+                authViewModel = authViewModel
+            )
+        }
+
+        // MFA Verification Screen
+        composable("mfa_verification") {
+            MfaVerificationScreen(
+                onVerificationSuccess = {
+                    navController.navigate("dashboard") {
+                        popUpTo("mfa_verification") { inclusive = true }
+                    }
+                },
+                onBack = {
+                    authViewModel.logout()
+                    authViewModel.clearMfaState()
+                    navController.navigate("login") {
+                        popUpTo("mfa_verification") { inclusive = true }
+                    }
+                },
+                viewModel = authViewModel
+            )
+        }
+
+        // Authenticator App Setup Screen
+        composable("authenticator_setup") {
+            AuthenticatorSetupScreen(
+                onSetupComplete = {
+                    navController.popBackStack()
+                    // Optionally show success message or navigate to profile
+                },
+                onBack = {
+                    navController.popBackStack()
+                },
+                viewModel = authViewModel
             )
         }
     }
