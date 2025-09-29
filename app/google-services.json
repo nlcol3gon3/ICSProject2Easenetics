@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "579771237329",
+    "project_id": "ics-project-2",
+    "storage_bucket": "ics-project-2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:579771237329:android:40e7d5a752ac2249d216f0",
+        "android_client_info": {
+          "package_name": "com.example.icsproject2easenetics"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHBUM-JVRDkLZ8JRDm82Irz6_ujqW3Mtw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
