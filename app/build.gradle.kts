@@ -72,6 +72,14 @@ dependencies {
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.7.3")
 
+    // Lifecycle & ViewModel (ADD THIS CRITICAL DEPENDENCY)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+
+    // Coroutines (ADD THESE)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.1")
+
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.5.0"))
     implementation("com.google.firebase:firebase-auth-ktx")

@@ -29,6 +29,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState // ADD THIS IMPORT
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.icsproject2easenetics.ui.viewmodels.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,11 +54,11 @@ fun LoginScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
 
-    // Observe authentication state
-    val currentUser by viewModel.currentUser
-    val errorMessage by viewModel.errorMessage
+    // Observe authentication state - FIXED: Added collectAsState()
+    val currentUser by viewModel.currentUser.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     // Navigate to main app if user is already logged in
     LaunchedEffect(currentUser) {
@@ -70,7 +72,7 @@ fun LoginScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Login to Easenetics",
+                        text = "Login to Easenetics", // FIXED: Added 'text =' parameter
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -109,7 +111,7 @@ fun LoginScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        "Welcome Back",
+                        text = "Welcome Back", // FIXED: Added 'text =' parameter
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -117,10 +119,11 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        "Sign in to continue your digital learning journey",
+                        text = "Sign in to continue your digital learning journey", // FIXED: Added 'text =' parameter
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
                     )
+
 
                     Spacer(modifier = Modifier.height(32.dp))
 
@@ -193,7 +196,7 @@ fun LoginScreen(
                     // Register Link
                     TextButton(onClick = onNavigateToRegister) {
                         Text(
-                            "Don't have an account? Sign up",
+                            text = "Don't have an account? Sign up",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }

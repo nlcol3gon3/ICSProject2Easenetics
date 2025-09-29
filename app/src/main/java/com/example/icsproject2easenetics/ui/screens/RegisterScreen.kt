@@ -1,5 +1,6 @@
 package com.example.icsproject2easenetics.ui.screens
 
+import com.example.icsproject2easenetics.ui.viewmodels.AuthViewModel
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -30,6 +31,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState // ADD THIS IMPORT
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,10 +58,10 @@ fun RegisterScreen(
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
-    // Observe authentication state
-    val currentUser by viewModel.currentUser
-    val errorMessage by viewModel.errorMessage
-    val isLoading by viewModel.isLoading
+    // Observe authentication state - FIXED: Added collectAsState()
+    val currentUser by viewModel.currentUser.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     // Navigate to main app if registration is successful
     LaunchedEffect(currentUser) {
@@ -73,7 +75,7 @@ fun RegisterScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Join Easenetics",
+                        text = "Join Easenetics", // FIXED: Added 'text =' parameter
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -112,7 +114,7 @@ fun RegisterScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        "Create Account",
+                        text = "Create Account", // FIXED: Added 'text =' parameter
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -120,7 +122,7 @@ fun RegisterScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        "Start your digital learning journey today",
+                        text = "Start your digital learning journey today", // FIXED: Added 'text =' parameter
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
                     )
