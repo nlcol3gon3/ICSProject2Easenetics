@@ -8,6 +8,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.icsproject2easenetics.ui.screens.DashboardScreen
 import com.example.icsproject2easenetics.ui.screens.LoginScreen
 import com.example.icsproject2easenetics.ui.screens.OnboardingScreen
+import com.example.icsproject2easenetics.ui.screens.ProfileScreen  // ADD THIS IMPORT
 import com.example.icsproject2easenetics.ui.screens.RegisterScreen
 import com.example.icsproject2easenetics.ui.viewmodels.AuthViewModel
 
@@ -76,7 +77,22 @@ fun AppNavigation() {
                     println("Chatbot clicked")
                 },
                 onProfileClick = {
-                    println("Profile clicked")
+                    navController.navigate("profile") // ADD THIS
+                }
+            )
+        }
+
+        // ADD THIS NEW COMPOSABLE - MAKE SURE IT'S INSIDE THE NavHost BRACES
+        composable("profile") {
+            ProfileScreen(
+                onBack = {
+                    navController.popBackStack()
+                },
+                onLogout = {
+                    authViewModel.logout()
+                    navController.navigate("login") {
+                        popUpTo("dashboard") { inclusive = true }
+                    }
                 }
             )
         }
