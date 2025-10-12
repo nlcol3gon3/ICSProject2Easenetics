@@ -10,9 +10,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
-import androidx.compose.material.icons.filled.Person // ADD THIS IMPORT
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -20,19 +21,24 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton // ADD THIS IMPORT
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.icsproject2easenetics.ui.components.LessonCard
 import com.example.icsproject2easenetics.ui.components.ProgressCard
+import com.example.icsproject2easenetics.ui.viewmodels.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,22 +47,38 @@ fun DashboardScreen(
     onChatbotClick: () -> Unit,
     onProfileClick: () -> Unit
 ) {
+    // TEMPORARY FIX: Comment out ViewModel for now to get it running
+    // val userViewModel: UserViewModel = viewModel()
+    // val userProgress by userViewModel.userProgress.collectAsState()
+    // val availableLessons by userViewModel.availableLessons.collectAsState()
+    // val isLoading by userViewModel.isLoading.collectAsState()
+
+    // Use sample data instead
+    val completedLessons = 3
+    val totalLessons = 10
+    val averageScore = 85
+
+    // Load user progress and lessons when screen is created
+    // LaunchedEffect(Unit) {
+    //     userViewModel.loadUserProgress("current_user_id")
+    //     userViewModel.loadAvailableLessons()
+    // }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Easenetics",
+                        text = "Easenetics",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
                 },
                 actions = {
-                    // ADD PROFILE BUTTON - FIXED IMPORTS
                     IconButton(onClick = onProfileClick) {
                         Icon(
-                            Icons.Filled.Person, // Using Person icon instead of Settings
+                            Icons.Filled.Person,
                             contentDescription = "Profile"
                         )
                     }
@@ -95,14 +117,14 @@ fun DashboardScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            "Welcome to Easenetics!",
+                            text = "Welcome to Easenetics!",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "Learn digital skills at your own pace with our easy-to-follow lessons",
+                            text = "Learn digital skills at your own pace with our easy-to-follow lessons",
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center
                         )
@@ -113,45 +135,48 @@ fun DashboardScreen(
             item {
                 // Progress Overview
                 ProgressCard(
-                    completedLessons = 3,
-                    totalLessons = 10,
-                    averageScore = 85
+                    completedLessons = completedLessons,
+                    totalLessons = totalLessons,
+                    averageScore = averageScore
                 )
             }
 
             item {
                 Text(
-                    "Featured Lessons",
+                    text = "Featured Lessons",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
             }
 
-            // Sample Lessons
-            items(5) { index ->
+            // Sample lessons data
+            val sampleLessons = listOf(
+                SampleLesson("lesson_smartphone_basics", "Getting Started with Your Smartphone", "Learn the basics of using your smartphone", 15, 0),
+                SampleLesson("lesson_internet_safety", "Safe Internet Browsing", "Stay safe while browsing the internet", 20, 25),
+                SampleLesson("lesson_social_media", "Connecting with Family on Social Media", "Connect with loved ones on social platforms", 25, 50),
+                SampleLesson("lesson_online_safety", "Online Safety Basics", "Protect yourself from online threats", 18, 75),
+                SampleLesson("lesson_video_calls", "Using Video Calls", "Make video calls to family and friends", 22, 100)
+            )
+
+            itemsIndexed(sampleLessons) { index, lesson ->
                 LessonCard(
-                    title = when (index) {
-                        0 -> "Getting Started with Your Smartphone"
-                        1 -> "Safe Internet Browsing"
-                        2 -> "Connecting with Family on Social Media"
-                        3 -> "Online Safety Basics"
-                        4 -> "Using Video Calls"
-                        else -> "Digital Skills Lesson"
-                    },
-                    description = when (index) {
-                        0 -> "Learn the basics of using your smartphone"
-                        1 -> "Stay safe while browsing the internet"
-                        2 -> "Connect with loved ones on social platforms"
-                        3 -> "Protect yourself from online threats"
-                        4 -> "Make video calls to family and friends"
-                        else -> "Improve your digital skills"
-                    },
-                    duration = "15 min",
-                    progress = (index * 25).coerceAtMost(100),
+                    title = lesson.title,
+                    description = lesson.description,
+                    duration = "${lesson.duration} min",
+                    progress = lesson.progress,
                     category = index,
-                    onClick = { onLessonClick("lesson_$index") }
+                    onClick = { onLessonClick(lesson.id) }
                 )
             }
         }
     }
 }
+
+// Helper data class for sample lessons
+private data class SampleLesson(
+    val id: String,
+    val title: String,
+    val description: String,
+    val duration: Int,
+    val progress: Int
+)

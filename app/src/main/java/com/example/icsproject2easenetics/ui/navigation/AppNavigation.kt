@@ -2,17 +2,22 @@ package com.example.icsproject2easenetics.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.icsproject2easenetics.ui.screens.AuthenticatorSetupScreen
+import com.example.icsproject2easenetics.ui.screens.ChatbotScreen
 import com.example.icsproject2easenetics.ui.screens.DashboardScreen
+import com.example.icsproject2easenetics.ui.screens.LessonScreen
 import com.example.icsproject2easenetics.ui.screens.LoginScreen
 import com.example.icsproject2easenetics.ui.screens.MfaVerificationScreen
 import com.example.icsproject2easenetics.ui.screens.OnboardingScreen
 import com.example.icsproject2easenetics.ui.screens.ProfileScreen
 import com.example.icsproject2easenetics.ui.screens.RegisterScreen
 import com.example.icsproject2easenetics.ui.viewmodels.AuthViewModel
+import com.example.icsproject2easenetics.ui.viewmodels.UserViewModel
 
 @Composable
 fun AppNavigation() {
@@ -26,7 +31,6 @@ fun AppNavigation() {
         composable("onboarding") {
             OnboardingScreen(
                 onGetStarted = {
-                    // Check if user is already logged in
                     if (authViewModel.currentUser.value != null) {
                         navController.navigate("dashboard")
                     } else {
@@ -39,11 +43,8 @@ fun AppNavigation() {
         composable("login") {
             LoginScreen(
                 onLoginSuccess = {
-                    // Check if MFA verification is required
                     val currentUser = authViewModel.currentUser.value
                     currentUser?.let { user ->
-                        // In a real app, you would check the user's MFA status from Firestore
-                        // For now, we'll check the MFA verification state
                         if (authViewModel.mfaVerificationState.value is com.example.icsproject2easenetics.ui.viewmodels.MfaVerificationState.Required) {
                             navController.navigate("mfa_verification")
                         } else {
@@ -52,7 +53,6 @@ fun AppNavigation() {
                             }
                         }
                     } ?: run {
-                        // If no user, go to dashboard directly
                         navController.navigate("dashboard") {
                             popUpTo("login") { inclusive = true }
                         }
@@ -88,10 +88,11 @@ fun AppNavigation() {
         composable("dashboard") {
             DashboardScreen(
                 onLessonClick = { lessonId ->
-                    println("Lesson clicked: $lessonId")
+                    // Navigate to lesson screen with lessonId as parameter
+                    navController.navigate("lesson/$lessonId")
                 },
                 onChatbotClick = {
-                    println("Chatbot clicked")
+                    navController.navigate("chatbot")
                 },
                 onProfileClick = {
                     navController.navigate("profile")
@@ -138,12 +139,38 @@ fun AppNavigation() {
             AuthenticatorSetupScreen(
                 onSetupComplete = {
                     navController.popBackStack()
-                    // Optionally show success message or navigate to profile
                 },
                 onBack = {
                     navController.popBackStack()
                 },
                 viewModel = authViewModel
+            )
+        }
+
+        // Chatbot Screen - NEW
+        composable("chatbot") {
+            ChatbotScreen(
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Lesson Screen - NEW with parameter
+        composable(
+            "lesson/{lessonId}",
+            arguments = listOf(navArgument("lessonId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val lessonId = backStackEntry.arguments?.getString("lessonId") ?: ""
+            LessonScreen(
+                lessonId = lessonId,
+                onBack = {
+                    navController.popBackStack()
+                },
+                onMarkComplete = {
+                    // Optionally show confirmation or navigate back
+                    navController.popBackStack()
+                }
             )
         }
     }
