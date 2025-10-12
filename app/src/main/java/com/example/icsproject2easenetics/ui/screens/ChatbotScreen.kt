@@ -17,6 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -45,16 +47,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.icsproject2easenetics.service.SuggestedLesson
 import com.example.icsproject2easenetics.ui.viewmodels.ChatbotViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatbotScreen(
     onBack: () -> Unit,
+    onLessonClick: (String) -> Unit,
     viewModel: ChatbotViewModel = viewModel()
 ) {
     val chatMessages by viewModel.chatMessages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val suggestedLessons by viewModel.suggestedLessons.collectAsState()
+    val quickQuestions by viewModel.quickQuestions.collectAsState()
     var userInput by remember { mutableStateOf("") }
     val lazyListState = rememberLazyListState()
 
@@ -78,6 +84,11 @@ fun ChatbotScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowBack, "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { viewModel.clearChat() }) {
+                        Icon(Icons.Filled.Clear, "Clear Chat")
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -137,6 +148,65 @@ fun ChatbotScreen(
                 }
             }
 
+            // Suggested Lessons (if any)
+            if (suggestedLessons.isNotEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "📚 Suggested Lessons:",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            suggestedLessons.forEach { lesson ->
+                                SuggestedLessonItem(
+                                    lesson = lesson,
+                                    onClick = { onLessonClick(lesson.lessonId) }
+                                )
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            // Quick Questions (if any)
+            if (quickQuestions.isNotEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "💡 Quick Questions:",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            quickQuestions.forEach { question ->
+                                QuickQuestionButton(
+                                    question = question,
+                                    onClick = {
+                                        userInput = question
+                                        viewModel.sendMessage(question)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             // Input area
             Card(
                 modifier = Modifier
@@ -145,31 +215,7 @@ fun ChatbotScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    // Quick questions
-                    Text(
-                        text = "Quick Questions:",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        QuickQuestionButton(
-                            question = "What is a smartphone?",
-                            onClick = { userInput = "What is a smartphone?" }
-                        )
-                        QuickQuestionButton(
-                            question = "How to use email?",
-                            onClick = { userInput = "How to use email?" }
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Input field
+                    // Input field with voice button
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -181,6 +227,16 @@ fun ChatbotScreen(
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                         )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // Voice input button (placeholder for now)
+                        IconButton(
+                            onClick = { /* TODO: Implement voice input */ },
+                            enabled = false // Disabled until implemented
+                        ) {
+                            Icon(Icons.Filled.Mic, "Voice Input")
+                        }
 
                         Spacer(modifier = Modifier.width(8.dp))
 
@@ -241,15 +297,44 @@ fun ChatMessageBubble(message: com.example.icsproject2easenetics.ui.viewmodels.C
 }
 
 @Composable
-fun QuickQuestionButton(question: String, onClick: () -> Unit) {
+fun QuickQuestionButton(
+    question: String,
+    onClick: () -> Unit
+) {
     Button(
         onClick = onClick,
-        modifier = Modifier.padding(vertical = 4.dp)
+        modifier = Modifier.fillMaxWidth()
     ) {
         Text(
             text = question,
-            style = MaterialTheme.typography.bodySmall,
-            maxLines = 1
+            style = MaterialTheme.typography.bodySmall
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SuggestedLessonItem(
+    lesson: SuggestedLesson,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = lesson.title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = lesson.description,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
     }
 }

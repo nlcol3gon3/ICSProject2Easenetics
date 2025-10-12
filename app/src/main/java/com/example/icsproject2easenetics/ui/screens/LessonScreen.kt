@@ -42,6 +42,7 @@ import com.example.icsproject2easenetics.data.models.Lesson
 import com.example.icsproject2easenetics.data.models.UserProgress
 import com.example.icsproject2easenetics.data.models.DifficultyLevel
 import com.example.icsproject2easenetics.data.models.LessonCategory
+import com.example.icsproject2easenetics.data.models.QuizQuestion
 import com.example.icsproject2easenetics.ui.viewmodels.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,6 +50,7 @@ import com.example.icsproject2easenetics.ui.viewmodels.UserViewModel
 fun LessonScreen(
     lessonId: String,
     onBack: () -> Unit,
+    onStartQuiz: (String, List<QuizQuestion>) -> Unit,
     onMarkComplete: () -> Unit
 ) {
     // TEMPORARY FIX: Comment out ViewModel for now
@@ -86,9 +88,12 @@ fun LessonScreen(
             if (currentLesson != null) {
                 LessonBottomBar(
                     isCompleted = lessonProgress?.completed ?: false,
-                    onMarkComplete = {
-                        // TEMPORARY: Just call the callback without ViewModel
-                        onMarkComplete()
+                    hasQuiz = currentLesson.hasQuiz,
+                    onMarkComplete = onMarkComplete,
+                    onStartQuiz = {
+                        if (currentLesson.quizQuestions.isNotEmpty()) {
+                            onStartQuiz(currentLesson.lessonId, currentLesson.quizQuestions)
+                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -250,7 +255,9 @@ fun MetadataRow(label: String, value: String) {
 @Composable
 fun LessonBottomBar(
     isCompleted: Boolean,
+    hasQuiz: Boolean,
     onMarkComplete: () -> Unit,
+    onStartQuiz: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -265,11 +272,21 @@ fun LessonBottomBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (isCompleted) {
-                Icon(Icons.Filled.CheckCircle, "Completed", tint = MaterialTheme.colorScheme.primary)
-                Text("Lesson Completed!", fontWeight = FontWeight.Bold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.CheckCircle, "Completed", tint = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Text("Lesson Completed!", fontWeight = FontWeight.Bold)
+                }
             } else {
-                Button(onClick = onMarkComplete) {
-                    Text("Mark as Complete")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (hasQuiz) {
+                        Button(onClick = onStartQuiz) {
+                            Text("Take Quiz")
+                        }
+                    }
+                    Button(onClick = onMarkComplete) {
+                        Text("Mark Complete")
+                    }
                 }
             }
         }
@@ -286,7 +303,46 @@ private val sampleLessons = listOf(
         duration = 15,
         difficulty = DifficultyLevel.BEGINNER,
         category = LessonCategory.SMARTPHONE_BASICS,
-        order = 1
+        order = 1,
+        hasQuiz = true,
+        quizQuestions = listOf(
+            QuizQuestion(
+                questionId = "q1",
+                question = "What is the main purpose of a smartphone?",
+                options = listOf(
+                    "Communication and internet access",
+                    "Only for emergency calls",
+                    "Just for taking photos",
+                    "Only for games"
+                ),
+                correctAnswer = 0,
+                explanation = "Smartphones are designed for communication, internet access, and many other useful functions."
+            ),
+            QuizQuestion(
+                questionId = "q2",
+                question = "How do you turn on a smartphone?",
+                options = listOf(
+                    "Press and hold the power button",
+                    "Shake the phone vigorously",
+                    "Shout 'turn on' at the phone",
+                    "Put it in sunlight"
+                ),
+                correctAnswer = 0,
+                explanation = "The power button is usually on the side or top of the phone. Press and hold it for a few seconds."
+            ),
+            QuizQuestion(
+                questionId = "q3",
+                question = "What does Wi-Fi allow you to do?",
+                options = listOf(
+                    "Connect to the internet without using mobile data",
+                    "Make phone calls for free",
+                    "Charge your phone wirelessly",
+                    "Improve camera quality"
+                ),
+                correctAnswer = 0,
+                explanation = "Wi-Fi lets you access the internet through wireless networks, saving your mobile data."
+            )
+        )
     ),
     Lesson(
         lessonId = "lesson_internet_safety",
@@ -296,7 +352,34 @@ private val sampleLessons = listOf(
         duration = 20,
         difficulty = DifficultyLevel.BEGINNER,
         category = LessonCategory.ONLINE_SAFETY,
-        order = 2
+        order = 2,
+        hasQuiz = true,
+        quizQuestions = listOf(
+            QuizQuestion(
+                questionId = "q1",
+                question = "What makes a strong password?",
+                options = listOf(
+                    "Mix of letters, numbers, and symbols",
+                    "Your pet's name",
+                    "123456",
+                    "password"
+                ),
+                correctAnswer = 0,
+                explanation = "Strong passwords combine uppercase, lowercase, numbers, and symbols for better security."
+            ),
+            QuizQuestion(
+                questionId = "q2",
+                question = "What should you do if you receive a suspicious email?",
+                options = listOf(
+                    "Delete it without clicking links",
+                    "Click all links to see what happens",
+                    "Reply with your personal information",
+                    "Forward it to all your contacts"
+                ),
+                correctAnswer = 0,
+                explanation = "Suspicious emails often contain phishing attempts. It's safest to delete them."
+            )
+        )
     ),
     Lesson(
         lessonId = "lesson_social_media",
@@ -306,7 +389,22 @@ private val sampleLessons = listOf(
         duration = 25,
         difficulty = DifficultyLevel.INTERMEDIATE,
         category = LessonCategory.SOCIAL_MEDIA,
-        order = 3
+        order = 3,
+        hasQuiz = true,
+        quizQuestions = listOf(
+            QuizQuestion(
+                questionId = "q1",
+                question = "What is the main benefit of social media for older adults?",
+                options = listOf(
+                    "Staying connected with family and friends",
+                    "Getting discounts on shopping",
+                    "Watching unlimited videos",
+                    "Playing games all day"
+                ),
+                correctAnswer = 0,
+                explanation = "Social media helps maintain relationships with loved ones, especially those who live far away."
+            )
+        )
     ),
     Lesson(
         lessonId = "lesson_online_safety",
@@ -316,7 +414,8 @@ private val sampleLessons = listOf(
         duration = 18,
         difficulty = DifficultyLevel.BEGINNER,
         category = LessonCategory.ONLINE_SAFETY,
-        order = 4
+        order = 4,
+        hasQuiz = false
     ),
     Lesson(
         lessonId = "lesson_video_calls",
@@ -326,7 +425,22 @@ private val sampleLessons = listOf(
         duration = 22,
         difficulty = DifficultyLevel.INTERMEDIATE,
         category = LessonCategory.COMMUNICATION,
-        order = 5
+        order = 5,
+        hasQuiz = true,
+        quizQuestions = listOf(
+            QuizQuestion(
+                questionId = "q1",
+                question = "Which app is commonly used for video calls?",
+                options = listOf(
+                    "All of the above",
+                    "Zoom",
+                    "FaceTime",
+                    "WhatsApp"
+                ),
+                correctAnswer = 0,
+                explanation = "Many apps support video calls, including Zoom, FaceTime, WhatsApp, and others."
+            )
+        )
     )
 )
 
