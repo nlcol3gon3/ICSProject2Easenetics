@@ -1,6 +1,6 @@
 package com.example.icsproject2easenetics.data.models
 
-// In Lesson.kt - Add quiz data
+// Quiz data
 data class Lesson(
     val lessonId: String = "",
     val title: String = "",
@@ -19,7 +19,7 @@ data class Lesson(
         LessonCategory.SMARTPHONE_BASICS, 0, emptyList(), false)
 }
 
-// NEW: Quiz data class
+// Quiz data class
 data class QuizQuestion(
     val questionId: String = "",
     val question: String = "",

@@ -27,9 +27,9 @@ class FirebaseTestRepository @Inject constructor(
             // Even if no user is logged in, the auth service should be available
             auth.app.name // This will throw if auth isn't initialized
 
-            true // If we reach here, Firebase is connected successfully
+            true
         } catch (e: Exception) {
-            false // Firebase connection failed
+            false
         }
     }
 
@@ -41,9 +41,9 @@ class FirebaseTestRepository @Inject constructor(
                 .get()
                 .await()
 
-            document.exists() // Returns true if document exists
+            document.exists()
         } catch (e: Exception) {
-            false // Read operation failed
+            false
         }
     }
 }

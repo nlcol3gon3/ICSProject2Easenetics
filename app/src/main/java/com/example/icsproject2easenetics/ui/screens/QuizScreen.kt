@@ -1,4 +1,3 @@
-// Create new file: QuizScreen.kt
 package com.example.icsproject2easenetics.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement

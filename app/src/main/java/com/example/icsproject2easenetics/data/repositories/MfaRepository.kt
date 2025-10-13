@@ -34,7 +34,6 @@ class MfaRepository @Inject constructor(private val firebaseAuth: FirebaseAuth) 
 
     suspend fun updatePhoneNumber(user: FirebaseUser, phoneNumber: String): Result<Boolean> {
         return try {
-            // This would update the user's phone number in Firebase
             Result.success(true)
         } catch (e: Exception) {
             Result.failure(e)

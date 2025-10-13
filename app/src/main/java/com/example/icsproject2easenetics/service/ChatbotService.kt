@@ -1,4 +1,3 @@
-// ChatbotService.kt - Make sure it's in the correct package
 package com.example.icsproject2easenetics.service
 
 import kotlinx.coroutines.delay

@@ -38,7 +38,7 @@ enum class TextSize {
     SMALL, MEDIUM, LARGE, EXTRA_LARGE
 }
 
-// ADD THESE NEW DATA CLASSES FOR MFA
+// New added data classes for MFA
 data class MfaSetupRequest(
     val method: MfaMethod,
     val phoneNumber: String? = null,
