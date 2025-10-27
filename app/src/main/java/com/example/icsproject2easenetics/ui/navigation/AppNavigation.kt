@@ -14,6 +14,7 @@ import com.example.icsproject2easenetics.ui.screens.LessonScreen
 import com.example.icsproject2easenetics.ui.screens.LoginScreen
 import com.example.icsproject2easenetics.ui.screens.MfaVerificationScreen
 import com.example.icsproject2easenetics.ui.screens.OnboardingScreen
+import com.example.icsproject2easenetics.ui.screens.ProgressScreen
 import com.example.icsproject2easenetics.ui.screens.ProfileScreen
 import com.example.icsproject2easenetics.ui.screens.QuizScreen
 import com.example.icsproject2easenetics.ui.screens.RegisterScreen
@@ -96,6 +97,9 @@ fun AppNavigation() {
                 },
                 onProfileClick = {
                     navController.navigate("profile")
+                },
+                onProgressClick = {
+                    navController.navigate("progress")
                 }
             )
         }
@@ -112,6 +116,15 @@ fun AppNavigation() {
                     }
                 },
                 authViewModel = authViewModel
+            )
+        }
+
+        // Progress Screen - NEW
+        composable("progress") {
+            ProgressScreen(
+                onBack = {
+                    navController.popBackStack()
+                }
             )
         }
 
@@ -147,7 +160,7 @@ fun AppNavigation() {
             )
         }
 
-// Chatbot composable
+        // Chatbot Screen
         composable("chatbot") {
             ChatbotScreen(
                 onBack = {

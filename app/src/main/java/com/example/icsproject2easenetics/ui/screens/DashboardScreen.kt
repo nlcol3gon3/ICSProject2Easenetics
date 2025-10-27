@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -45,9 +46,10 @@ import com.example.icsproject2easenetics.ui.viewmodels.UserViewModel
 fun DashboardScreen(
     onLessonClick: (String) -> Unit,
     onChatbotClick: () -> Unit,
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onProgressClick: () -> Unit // NEW
 ) {
-    // TEMPORARY FIX: Comment out ViewModel for now to get it running
+    // TEMPORARY FIX: Comment out ViewModel for now
     // val userViewModel: UserViewModel = viewModel()
     // val userProgress by userViewModel.userProgress.collectAsState()
     // val availableLessons by userViewModel.availableLessons.collectAsState()
@@ -76,6 +78,14 @@ fun DashboardScreen(
                     )
                 },
                 actions = {
+                    // Progress Button - NEW
+                    IconButton(onClick = onProgressClick) {
+                        Icon(
+                            Icons.Filled.TrendingUp,
+                            contentDescription = "Progress"
+                        )
+                    }
+                    // Profile Button
                     IconButton(onClick = onProfileClick) {
                         Icon(
                             Icons.Filled.Person,
