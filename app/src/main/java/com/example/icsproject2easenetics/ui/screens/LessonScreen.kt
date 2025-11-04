@@ -2,6 +2,7 @@ package com.example.icsproject2easenetics.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,9 +16,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,8 +34,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -43,6 +49,7 @@ import com.example.icsproject2easenetics.data.models.UserProgress
 import com.example.icsproject2easenetics.data.models.DifficultyLevel
 import com.example.icsproject2easenetics.data.models.LessonCategory
 import com.example.icsproject2easenetics.data.models.QuizQuestion
+import com.example.icsproject2easenetics.service.VoiceService
 import com.example.icsproject2easenetics.ui.viewmodels.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,15 +60,21 @@ fun LessonScreen(
     onStartQuiz: (String, List<QuizQuestion>) -> Unit,
     onMarkComplete: () -> Unit
 ) {
-    // TEMPORARY FIX: Comment out ViewModel for now
-    // val userViewModel: UserViewModel = viewModel()
-    // val availableLessons by userViewModel.availableLessons.collectAsState()
-    // val userProgress by userViewModel.userProgress.collectAsState()
-    // val isLoading by userViewModel.isLoading.collectAsState()
+    val context = LocalContext.current
+    val voiceService = remember { VoiceService(context) }
+
+    var isNarrating by remember { mutableStateOf(false) }
+    val isSpeaking by voiceService.isSpeaking.collectAsState()
+    val speakingError by voiceService.speakingError.collectAsState()
 
     // Use sample data instead
     val currentLesson = sampleLessons.find { it.lessonId == lessonId }
     val lessonProgress = sampleProgress.find { it.lessonId == lessonId }
+
+    // Stop narration when leaving screen
+    LaunchedEffect(Unit) {
+        voiceService.stopSpeaking()
+    }
 
     Scaffold(
         topBar = {
@@ -75,8 +88,41 @@ fun LessonScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        voiceService.stopSpeaking()
+                        onBack()
+                    }) {
                         Icon(Icons.Filled.ArrowBack, "Back")
+                    }
+                },
+                actions = {
+                    // Voice Narration Toggle - NEW
+                    if (currentLesson != null) {
+                        IconButton(
+                            onClick = {
+                                if (isSpeaking) {
+                                    voiceService.stopSpeaking()
+                                    isNarrating = false
+                                } else {
+                                    val narrationText = """
+                                        ${currentLesson.title}
+                                        
+                                        ${currentLesson.description}
+                                        
+                                        ${currentLesson.content}
+                                    """.trimIndent()
+                                    voiceService.speak(narrationText)
+                                    isNarrating = true
+                                }
+                            }
+                        ) {
+                            Icon(
+                                if (isSpeaking) Icons.Filled.VolumeOff else Icons.Filled.VolumeUp,
+                                contentDescription = if (isSpeaking) "Stop Narration" else "Start Narration",
+                                tint = if (isSpeaking) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -89,8 +135,12 @@ fun LessonScreen(
                 LessonBottomBar(
                     isCompleted = lessonProgress?.completed ?: false,
                     hasQuiz = currentLesson.hasQuiz,
-                    onMarkComplete = onMarkComplete,
+                    onMarkComplete = {
+                        voiceService.stopSpeaking()
+                        onMarkComplete()
+                    },
                     onStartQuiz = {
+                        voiceService.stopSpeaking()
                         if (currentLesson.quizQuestions.isNotEmpty()) {
                             onStartQuiz(currentLesson.lessonId, currentLesson.quizQuestions)
                         }
@@ -105,6 +155,25 @@ fun LessonScreen(
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
+            // Show speaking error if any
+            if (!speakingError.isNullOrEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = androidx.compose.material3.CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = speakingError!!,
+                        modifier = Modifier.padding(12.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
             if (currentLesson == null) {
                 Text(
                     text = "Lesson not found",
@@ -117,6 +186,7 @@ fun LessonScreen(
                 LessonContent(
                     lesson = currentLesson,
                     progress = lessonProgress,
+                    voiceService = voiceService, // NEW
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
@@ -130,6 +200,7 @@ fun LessonScreen(
 fun LessonContent(
     lesson: Lesson,
     progress: UserProgress?,
+    voiceService: VoiceService, // NEW
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -185,11 +256,30 @@ fun LessonContent(
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text(
-                    text = "Lesson Content",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Lesson Content",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    // Read content aloud button - NEW
+                    IconButton(
+                        onClick = {
+                            voiceService.speak(lesson.content, "lesson_content")
+                        }
+                    ) {
+                        Icon(
+                            Icons.Filled.VolumeUp,
+                            contentDescription = "Read content aloud",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -231,6 +321,7 @@ fun LessonContent(
         }
     }
 }
+
 
 @Composable
 fun LessonMetadata(lesson: Lesson) {

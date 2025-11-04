@@ -1,3 +1,4 @@
+// Update ChatbotScreen.kt - Add voice input
 package com.example.icsproject2easenetics.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -43,10 +45,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.icsproject2easenetics.service.SpeechRecognitionService
 import com.example.icsproject2easenetics.service.SuggestedLesson
 import com.example.icsproject2easenetics.ui.viewmodels.ChatbotViewModel
 
@@ -57,18 +61,39 @@ fun ChatbotScreen(
     onLessonClick: (String) -> Unit,
     viewModel: ChatbotViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val speechService = remember { SpeechRecognitionService(context) }
+
     val chatMessages by viewModel.chatMessages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val suggestedLessons by viewModel.suggestedLessons.collectAsState()
     val quickQuestions by viewModel.quickQuestions.collectAsState()
+
     var userInput by remember { mutableStateOf("") }
+    val isListening by speechService.isListeningState.collectAsState()
+    val recognitionResult by speechService.recognitionResult.collectAsState()
+    val recognitionError by speechService.recognitionError.collectAsState()
+
     val lazyListState = rememberLazyListState()
+
+    // Auto-fill user input with speech recognition result
+    LaunchedEffect(recognitionResult) {
+        recognitionResult?.let { result ->
+            userInput = result
+            speechService.clearResult()
+        }
+    }
 
     // Auto-scroll to bottom when new messages arrive
     LaunchedEffect(chatMessages.size) {
         if (chatMessages.isNotEmpty()) {
             lazyListState.animateScrollToItem(chatMessages.size - 1)
         }
+    }
+
+    // Clean up speech service when leaving screen
+    LaunchedEffect(Unit) {
+        speechService.cancelListening()
     }
 
     Scaffold(
@@ -82,12 +107,18 @@ fun ChatbotScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        speechService.cancelListening()
+                        onBack()
+                    }) {
                         Icon(Icons.Filled.ArrowBack, "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.clearChat() }) {
+                    IconButton(onClick = {
+                        speechService.cancelListening()
+                        viewModel.clearChat()
+                    }) {
                         Icon(Icons.Filled.Clear, "Clear Chat")
                     }
                 },
@@ -102,6 +133,26 @@ fun ChatbotScreen(
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
+            // Show recognition error if any
+            if (!recognitionError.isNullOrEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = recognitionError!!,
+                        modifier = Modifier.padding(12.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             // Chat messages
             LazyColumn(
                 modifier = Modifier
@@ -146,6 +197,38 @@ fun ChatbotScreen(
                         }
                     }
                 }
+            }
+
+            // Voice listening indicator - NEW
+            if (isListening) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Listening... Speak now",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
             // Suggested Lessons (if any)
@@ -230,12 +313,24 @@ fun ChatbotScreen(
 
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        // Voice input button (placeholder for now)
+                        // Voice input button - NOW FUNCTIONAL
                         IconButton(
-                            onClick = { /* TODO: Implement voice input */ },
-                            enabled = false // Disabled until implemented
+                            onClick = {
+                                if (isListening) {
+                                    speechService.stopListening()
+                                } else {
+                                    speechService.clearResult()
+                                    speechService.startListening()
+                                }
+                            },
+                            enabled = speechService.isAvailable()
                         ) {
-                            Icon(Icons.Filled.Mic, "Voice Input")
+                            Icon(
+                                if (isListening) Icons.Filled.MicOff else Icons.Filled.Mic,
+                                contentDescription = if (isListening) "Stop Listening" else "Voice Input",
+                                tint = if (isListening) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.primary
+                            )
                         }
 
                         Spacer(modifier = Modifier.width(8.dp))
@@ -245,12 +340,30 @@ fun ChatbotScreen(
                                 if (userInput.isNotBlank()) {
                                     viewModel.sendMessage(userInput)
                                     userInput = ""
+                                    speechService.cancelListening()
                                 }
                             },
                             enabled = userInput.isNotBlank() && !isLoading
                         ) {
                             Icon(Icons.Filled.Send, "Send")
                         }
+                    }
+
+                    // Voice input hint - NEW
+                    if (speechService.isAvailable()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "💡 Tap the microphone to use voice input",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "⚠️ Voice input not available on this device",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             }
