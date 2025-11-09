@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -44,13 +45,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.icsproject2easenetics.data.local.LocalDataSource
 import com.example.icsproject2easenetics.data.models.Lesson
 import com.example.icsproject2easenetics.data.models.UserProgress
 import com.example.icsproject2easenetics.data.models.DifficultyLevel
 import com.example.icsproject2easenetics.data.models.LessonCategory
 import com.example.icsproject2easenetics.data.models.QuizQuestion
 import com.example.icsproject2easenetics.service.VoiceService
-import com.example.icsproject2easenetics.ui.viewmodels.UserViewModel
+import com.example.icsproject2easenetics.ui.viewmodels.LessonViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,14 +64,20 @@ fun LessonScreen(
 ) {
     val context = LocalContext.current
     val voiceService = remember { VoiceService(context) }
+    val lessonViewModel: LessonViewModel = viewModel()
 
     var isNarrating by remember { mutableStateOf(false) }
     val isSpeaking by voiceService.isSpeaking.collectAsState()
     val speakingError by voiceService.speakingError.collectAsState()
 
-    // Use sample data instead
-    val currentLesson = sampleLessons.find { it.lessonId == lessonId }
-    val lessonProgress = sampleProgress.find { it.lessonId == lessonId }
+    // Load lesson data
+    val currentLesson by lessonViewModel.currentLesson.collectAsState()
+    val userProgress by lessonViewModel.userProgress.collectAsState()
+
+    // Load lesson when screen opens or lessonId changes
+    LaunchedEffect(lessonId) {
+        lessonViewModel.loadLesson(lessonId)
+    }
 
     // Stop narration when leaving screen
     LaunchedEffect(Unit) {
@@ -96,7 +104,7 @@ fun LessonScreen(
                     }
                 },
                 actions = {
-                    // Voice Narration Toggle - NEW
+                    // Voice Narration Toggle
                     if (currentLesson != null) {
                         IconButton(
                             onClick = {
@@ -105,11 +113,11 @@ fun LessonScreen(
                                     isNarrating = false
                                 } else {
                                     val narrationText = """
-                                        ${currentLesson.title}
+                                        ${currentLesson!!.title}
                                         
-                                        ${currentLesson.description}
+                                        ${currentLesson!!.description}
                                         
-                                        ${currentLesson.content}
+                                        ${currentLesson!!.content}
                                     """.trimIndent()
                                     voiceService.speak(narrationText)
                                     isNarrating = true
@@ -133,16 +141,17 @@ fun LessonScreen(
         bottomBar = {
             if (currentLesson != null) {
                 LessonBottomBar(
-                    isCompleted = lessonProgress?.completed ?: false,
-                    hasQuiz = currentLesson.hasQuiz,
+                    isCompleted = userProgress?.completed ?: false,
+                    hasQuiz = currentLesson!!.hasQuiz,
                     onMarkComplete = {
                         voiceService.stopSpeaking()
+                        lessonViewModel.markLessonComplete()
                         onMarkComplete()
                     },
                     onStartQuiz = {
                         voiceService.stopSpeaking()
-                        if (currentLesson.quizQuestions.isNotEmpty()) {
-                            onStartQuiz(currentLesson.lessonId, currentLesson.quizQuestions)
+                        if (currentLesson!!.quizQuestions.isNotEmpty()) {
+                            onStartQuiz(currentLesson!!.lessonId, currentLesson!!.quizQuestions)
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -161,7 +170,7 @@ fun LessonScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    colors = androidx.compose.material3.CardDefaults.cardColors(
+                    colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.errorContainer
                     )
                 ) {
@@ -175,18 +184,25 @@ fun LessonScreen(
             }
 
             if (currentLesson == null) {
-                Text(
-                    text = "Lesson not found",
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp),
-                    textAlign = TextAlign.Center
-                )
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Loading lesson...",
+                        textAlign = TextAlign.Center
+                    )
+                }
             } else {
                 LessonContent(
-                    lesson = currentLesson,
-                    progress = lessonProgress,
-                    voiceService = voiceService, // NEW
+                    lesson = currentLesson!!,
+                    progress = userProgress,
+                    voiceService = voiceService,
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
@@ -200,7 +216,7 @@ fun LessonScreen(
 fun LessonContent(
     lesson: Lesson,
     progress: UserProgress?,
-    voiceService: VoiceService, // NEW
+    voiceService: VoiceService,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -210,22 +226,36 @@ fun LessonContent(
         // Progress indicator
         if (progress != null) {
             Column {
-                Text(
-                    text = "Your Progress",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Your Progress",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = if (progress.completed) "Completed" else "In Progress",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (progress.completed) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 Spacer(modifier = Modifier.height(8.dp))
                 LinearProgressIndicator(
-                    progress = if (progress.completed) 1.0f else 0.5f,
-                    modifier = Modifier.fillMaxWidth()
+                    progress = if (progress.completed) 1.0f else 0.3f,
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
 
         // Lesson info card
         Card(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp)
@@ -251,7 +281,8 @@ fun LessonContent(
 
         // Lesson content
         Card(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp)
@@ -267,7 +298,7 @@ fun LessonContent(
                         fontWeight = FontWeight.Bold
                     )
 
-                    // Read content aloud button - NEW
+                    // Read content aloud button
                     IconButton(
                         onClick = {
                             voiceService.speak(lesson.content, "lesson_content")
@@ -286,7 +317,7 @@ fun LessonContent(
                 Text(
                     text = lesson.content,
                     style = MaterialTheme.typography.bodyLarge,
-                    lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.2
+                    lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.3
                 )
             }
         }
@@ -294,7 +325,8 @@ fun LessonContent(
         // Video section (if available)
         lesson.videoUrl?.let { videoUrl ->
             Card(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp)
@@ -307,28 +339,103 @@ fun LessonContent(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Video placeholder
+                    Text(
+                        text = "Watch a step-by-step video demonstration of this lesson",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Video placeholder with play button
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                Icons.Filled.PlayArrow,
+                                contentDescription = "Play Video",
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Video Tutorial",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Tap to play",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
                     Button(
                         onClick = { /* Play video */ },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Filled.PlayArrow, "Play Video")
+                        Icon(Icons.Filled.PlayArrow, "Play Video", modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.size(8.dp))
                         Text("Watch Video Tutorial")
                     }
                 }
             }
         }
+
+        // Quiz reminder (if lesson has quiz)
+        if (lesson.hasQuiz && lesson.quizQuestions.isNotEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "📝 Ready to Test Your Knowledge?",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "This lesson includes a ${lesson.quizQuestions.size}-question quiz to reinforce what you've learned.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "💡 Tip: Complete the quiz to earn achievements and track your progress!",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
     }
 }
-
 
 @Composable
 fun LessonMetadata(lesson: Lesson) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         MetadataRow("Duration", "${lesson.duration} minutes")
-        MetadataRow("Difficulty", lesson.difficulty.name)
-        MetadataRow("Category", lesson.category.name)
+        MetadataRow("Difficulty", formatDifficulty(lesson.difficulty))
+        MetadataRow("Category", formatCategory(lesson.category))
     }
 }
 
@@ -338,8 +445,8 @@ fun MetadataRow(label: String, value: String) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, fontWeight = FontWeight.Medium)
-        Text(value)
+        Text(label, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -366,17 +473,44 @@ fun LessonBottomBar(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.CheckCircle, "Completed", tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.size(8.dp))
-                    Text("Lesson Completed!", fontWeight = FontWeight.Bold)
+                    Column {
+                        Text("Lesson Completed!", fontWeight = FontWeight.Bold)
+                        Text(
+                            "Great job! You've mastered this topic.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Only show quiz button if lesson has quiz
                     if (hasQuiz) {
-                        Button(onClick = onStartQuiz) {
-                            Text("Take Quiz")
+                        Button(
+                            onClick = onStartQuiz,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text("Take Quiz", style = MaterialTheme.typography.titleMedium)
                         }
                     }
-                    Button(onClick = onMarkComplete) {
-                        Text("Mark Complete")
+
+                    Button(
+                        onClick = onMarkComplete,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (hasQuiz) MaterialTheme.colorScheme.secondary
+                            else MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text(
+                            if (hasQuiz) "Skip & Mark Complete" else "Mark Complete",
+                            style = MaterialTheme.typography.titleMedium
+                        )
                     }
                 }
             }
@@ -384,13 +518,53 @@ fun LessonBottomBar(
     }
 }
 
-// Sample data for testing
+// Helper functions for formatting
+private fun formatDifficulty(difficulty: DifficultyLevel): String {
+    return when (difficulty) {
+        DifficultyLevel.BEGINNER -> "🟢 Beginner"
+        DifficultyLevel.INTERMEDIATE -> "🟡 Intermediate"
+        DifficultyLevel.ADVANCED -> "🔴 Advanced"
+    }
+}
+
+private fun formatCategory(category: LessonCategory): String {
+    return when (category) {
+        LessonCategory.SMARTPHONE_BASICS -> "📱 Smartphone Basics"
+        LessonCategory.INTERNET_BROWSING -> "🌐 Internet Browsing"
+        LessonCategory.SOCIAL_MEDIA -> "👥 Social Media"
+        LessonCategory.ONLINE_SAFETY -> "🔒 Online Safety"
+        LessonCategory.COMMUNICATION -> "💬 Communication"
+    }
+}
+
+// Sample data for testing (fallback)
 private val sampleLessons = listOf(
     Lesson(
         lessonId = "lesson_smartphone_basics",
         title = "Getting Started with Your Smartphone",
         description = "Learn the basics of using your smartphone",
-        content = "In this lesson, you'll learn how to:\n\n• Turn your smartphone on and off\n• Make and receive calls\n• Send text messages\n• Take photos and videos\n• Connect to Wi-Fi\n\nA smartphone is like a small computer that fits in your pocket. It can help you stay connected with family, access information, and even have fun!",
+        content = """
+            Welcome to Your Smartphone!
+            
+            Your smartphone is like a small computer that fits in your pocket. Let's learn the basics:
+            
+            📱 Basic Functions:
+            • **Making Calls**: Tap the phone icon, enter number, tap green call button
+            • **Sending Messages**: Tap messages icon, select contact, type your message  
+            • **Taking Photos**: Open camera app, point at subject, tap shutter button
+            
+            🔋 Battery Tips:
+            • Charge your phone overnight
+            • Dim screen brightness to save battery
+            • Close apps you're not using
+            
+            ⚙️ Basic Settings:
+            • **Volume**: Use side buttons to adjust
+            • **Wi-Fi**: Swipe down from top, tap Wi-Fi icon
+            • **Brightness**: Swipe down from top, adjust slider
+            
+            Practice these steps with your phone in hand!
+        """.trimIndent(),
         duration = 15,
         difficulty = DifficultyLevel.BEGINNER,
         category = LessonCategory.SMARTPHONE_BASICS,
@@ -407,31 +581,19 @@ private val sampleLessons = listOf(
                     "Only for games"
                 ),
                 correctAnswer = 0,
-                explanation = "Smartphones are designed for communication, internet access, and many other useful functions."
+                explanation = "Smartphones are versatile devices for communication, internet, photos, and many useful functions."
             ),
             QuizQuestion(
                 questionId = "q2",
-                question = "How do you turn on a smartphone?",
+                question = "How do you make a phone call?",
                 options = listOf(
-                    "Press and hold the power button",
-                    "Shake the phone vigorously",
-                    "Shout 'turn on' at the phone",
-                    "Put it in sunlight"
+                    "Tap phone icon, enter number, tap call button",
+                    "Shake the phone and say 'call'",
+                    "Press all buttons at once",
+                    "Put phone to ear and wait"
                 ),
                 correctAnswer = 0,
-                explanation = "The power button is usually on the side or top of the phone. Press and hold it for a few seconds."
-            ),
-            QuizQuestion(
-                questionId = "q3",
-                question = "What does Wi-Fi allow you to do?",
-                options = listOf(
-                    "Connect to the internet without using mobile data",
-                    "Make phone calls for free",
-                    "Charge your phone wirelessly",
-                    "Improve camera quality"
-                ),
-                correctAnswer = 0,
-                explanation = "Wi-Fi lets you access the internet through wireless networks, saving your mobile data."
+                explanation = "Use the phone app to dial numbers and make calls safely."
             )
         )
     ),
@@ -439,7 +601,28 @@ private val sampleLessons = listOf(
         lessonId = "lesson_internet_safety",
         title = "Safe Internet Browsing",
         description = "Stay safe while browsing the internet",
-        content = "Internet safety is important for everyone. In this lesson, you'll learn:\n\n• How to identify safe websites\n• Creating strong passwords\n• Recognizing email scams\n• Protecting personal information\n• Using antivirus software\n\nRemember: Never share personal information like your Social Security number or bank details with strangers online.",
+        content = """
+            Staying Safe Online
+            
+            The internet is wonderful but requires caution. Here's how to stay safe:
+            
+            🔒 Password Security:
+            • Use strong, unique passwords
+            • Combine letters, numbers, and symbols
+            • Never share passwords with anyone
+            
+            📧 Email Safety:
+            • Don't open emails from strangers
+            • Never click suspicious links  
+            • Look for spelling mistakes in emails
+            
+            🌐 Website Safety:
+            • Look for 🔒 or 'https://' in address bar
+            • Avoid entering personal info on unfamiliar sites
+            • Use reputable websites for shopping
+            
+            Remember: If something seems too good to be true, it probably is!
+        """.trimIndent(),
         duration = 20,
         difficulty = DifficultyLevel.BEGINNER,
         category = LessonCategory.ONLINE_SAFETY,
@@ -456,80 +639,7 @@ private val sampleLessons = listOf(
                     "password"
                 ),
                 correctAnswer = 0,
-                explanation = "Strong passwords combine uppercase, lowercase, numbers, and symbols for better security."
-            ),
-            QuizQuestion(
-                questionId = "q2",
-                question = "What should you do if you receive a suspicious email?",
-                options = listOf(
-                    "Delete it without clicking links",
-                    "Click all links to see what happens",
-                    "Reply with your personal information",
-                    "Forward it to all your contacts"
-                ),
-                correctAnswer = 0,
-                explanation = "Suspicious emails often contain phishing attempts. It's safest to delete them."
-            )
-        )
-    ),
-    Lesson(
-        lessonId = "lesson_social_media",
-        title = "Connecting with Family on Social Media",
-        description = "Connect with loved ones on social platforms",
-        content = "Social media can help you stay connected with family and friends. In this lesson:\n\n• Creating a Facebook account\n• Finding and adding friends\n• Sharing photos and updates\n• Sending private messages\n• Privacy settings explained\n\nSocial media is a great way to see what your grandchildren are up to!",
-        duration = 25,
-        difficulty = DifficultyLevel.INTERMEDIATE,
-        category = LessonCategory.SOCIAL_MEDIA,
-        order = 3,
-        hasQuiz = true,
-        quizQuestions = listOf(
-            QuizQuestion(
-                questionId = "q1",
-                question = "What is the main benefit of social media for older adults?",
-                options = listOf(
-                    "Staying connected with family and friends",
-                    "Getting discounts on shopping",
-                    "Watching unlimited videos",
-                    "Playing games all day"
-                ),
-                correctAnswer = 0,
-                explanation = "Social media helps maintain relationships with loved ones, especially those who live far away."
-            )
-        )
-    ),
-    Lesson(
-        lessonId = "lesson_online_safety",
-        title = "Online Safety Basics",
-        description = "Protect yourself from online threats",
-        content = "Stay safe online with these essential tips:\n\n• Recognizing phishing emails\n• Safe online shopping practices\n• Protecting your identity\n• Using secure websites (look for https://)\n• What to do if you suspect fraud\n\nAlways remember: If something seems too good to be true, it probably is!",
-        duration = 18,
-        difficulty = DifficultyLevel.BEGINNER,
-        category = LessonCategory.ONLINE_SAFETY,
-        order = 4,
-        hasQuiz = false
-    ),
-    Lesson(
-        lessonId = "lesson_video_calls",
-        title = "Using Video Calls",
-        description = "Make video calls to family and friends",
-        content = "Video calls let you see and talk to loved ones face-to-face. Learn how to:\n\n• Set up video calling apps (Zoom, FaceTime, WhatsApp)\n• Make and receive video calls\n• Adjust camera and microphone settings\n• Share your screen\n• Troubleshoot common issues\n\nVideo calls are perfect for virtual family gatherings!",
-        duration = 22,
-        difficulty = DifficultyLevel.INTERMEDIATE,
-        category = LessonCategory.COMMUNICATION,
-        order = 5,
-        hasQuiz = true,
-        quizQuestions = listOf(
-            QuizQuestion(
-                questionId = "q1",
-                question = "Which app is commonly used for video calls?",
-                options = listOf(
-                    "All of the above",
-                    "Zoom",
-                    "FaceTime",
-                    "WhatsApp"
-                ),
-                correctAnswer = 0,
-                explanation = "Many apps support video calls, including Zoom, FaceTime, WhatsApp, and others."
+                explanation = "Strong passwords combine different character types for better security."
             )
         )
     )
@@ -540,38 +650,6 @@ private val sampleProgress = listOf(
         progressId = "1",
         userId = "user1",
         lessonId = "lesson_smartphone_basics",
-        completed = true,
-        score = 85,
-        timeSpent = 900
-    ),
-    UserProgress(
-        progressId = "2",
-        userId = "user1",
-        lessonId = "lesson_internet_safety",
-        completed = false,
-        score = 0,
-        timeSpent = 300
-    ),
-    UserProgress(
-        progressId = "3",
-        userId = "user1",
-        lessonId = "lesson_social_media",
-        completed = true,
-        score = 90,
-        timeSpent = 1200
-    ),
-    UserProgress(
-        progressId = "4",
-        userId = "user1",
-        lessonId = "lesson_online_safety",
-        completed = false,
-        score = 0,
-        timeSpent = 150
-    ),
-    UserProgress(
-        progressId = "5",
-        userId = "user1",
-        lessonId = "lesson_video_calls",
         completed = false,
         score = 0,
         timeSpent = 0
