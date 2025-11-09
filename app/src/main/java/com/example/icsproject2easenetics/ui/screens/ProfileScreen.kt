@@ -1,6 +1,8 @@
 package com.example.icsproject2easenetics.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material.icons.filled.SettingsAccessibility // NEW
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +18,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.SettingsAccessibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,6 +51,7 @@ import com.example.icsproject2easenetics.ui.viewmodels.ProfileViewModel
 @Composable
 fun ProfileScreen(
     onBack: () -> Unit,
+    onAccessibilityClick: () -> Unit, // NEW: Added accessibility navigation
     onLogout: () -> Unit,
     authViewModel: AuthViewModel = viewModel(),
     profileViewModel: ProfileViewModel = viewModel()
@@ -134,6 +138,59 @@ fun ProfileScreen(
                         Text("Member Since", fontWeight = FontWeight.Medium)
                         Text(userProfile?.createdAt?.toString()?.substring(0, 10) ?: "Unknown")
                     }
+                }
+            }
+
+            // Accessibility Settings Card - NEW
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Accessibility",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Accessibility Settings Button
+                    Button(
+                        onClick = onAccessibilityClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Filled.SettingsAccessibility,
+                                contentDescription = "Accessibility",
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.size(12.dp))
+                            Text(
+                                text = "Accessibility Settings",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Customize text size, voice settings, and visual preferences for better accessibility",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 
@@ -245,7 +302,7 @@ fun ProfileScreen(
                 }
             }
 
-            // Accessibility Settings Card
+            // App Settings Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -254,17 +311,16 @@ fun ProfileScreen(
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = "Accessibility",
+                        text = "App Settings",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Text Size Setting
+                    // Current Accessibility Settings Preview
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Text Size", fontWeight = FontWeight.Medium)
@@ -276,11 +332,21 @@ fun ProfileScreen(
                     // High Contrast
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("High Contrast", fontWeight = FontWeight.Medium)
                         Text(if (userProfile?.accessibilitySettings?.highContrast == true) "On" else "Off")
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Voice Narration
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Voice Narration", fontWeight = FontWeight.Medium)
+                        Text(if (userProfile?.accessibilitySettings?.voiceNarration == true) "On" else "Off")
                     }
                 }
             }
@@ -293,10 +359,22 @@ fun ProfileScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .height(50.dp),
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                )
             ) {
                 Text("Logout", style = MaterialTheme.typography.titleMedium)
             }
+
+            // App Version
+            Text(
+                text = "Easenetics v1.0.0",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
         }
     }
 }

@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.icsproject2easenetics.ui.screens.AccessibilityScreen
 import com.example.icsproject2easenetics.ui.screens.AuthenticatorSetupScreen
 import com.example.icsproject2easenetics.ui.screens.ChatbotScreen
 import com.example.icsproject2easenetics.ui.screens.DashboardScreen
@@ -109,6 +110,9 @@ fun AppNavigation() {
                 onBack = {
                     navController.popBackStack()
                 },
+                onAccessibilityClick = {
+                    navController.navigate("accessibility")
+                },
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate("login") {
@@ -119,7 +123,16 @@ fun AppNavigation() {
             )
         }
 
-        // Progress Screen - NEW
+        // Accessibility Screen
+        composable("accessibility") {
+            AccessibilityScreen(
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Progress Screen
         composable("progress") {
             ProgressScreen(
                 onBack = {
@@ -187,7 +200,6 @@ fun AppNavigation() {
                     navController.navigate("quiz/$quizLessonId")
                 },
                 onMarkComplete = {
-                    // Mark lesson complete and navigate back
                     navController.popBackStack()
                 }
             )
@@ -200,7 +212,7 @@ fun AppNavigation() {
         ) { backStackEntry ->
             val lessonId = backStackEntry.arguments?.getString("lessonId") ?: ""
 
-            // Sample questions - in real app, fetch from ViewModel based on lessonId
+            // Sample questions
             val sampleQuestions = when (lessonId) {
                 "lesson_smartphone_basics" -> listOf(
                     QuizQuestion(
@@ -214,84 +226,6 @@ fun AppNavigation() {
                         ),
                         correctAnswer = 0,
                         explanation = "Smartphones are versatile devices that combine calling, internet access, photography, and many other functions."
-                    ),
-                    QuizQuestion(
-                        questionId = "2",
-                        question = "How can you stay safe online?",
-                        options = listOf(
-                            "Use strong passwords and don't share personal information",
-                            "Share your password with family members",
-                            "Click on all email links",
-                            "Use the same password for everything"
-                        ),
-                        correctAnswer = 0,
-                        explanation = "Strong, unique passwords and careful sharing of personal information are key to online safety."
-                    ),
-                    QuizQuestion(
-                        questionId = "3",
-                        question = "What does the Wi-Fi symbol look like?",
-                        options = listOf(
-                            "A curved signal icon",
-                            "A battery icon",
-                            "A gear icon",
-                            "A heart icon"
-                        ),
-                        correctAnswer = 0,
-                        explanation = "The Wi-Fi symbol typically looks like curved signal bars getting larger."
-                    )
-                )
-                "lesson_internet_safety" -> listOf(
-                    QuizQuestion(
-                        questionId = "1",
-                        question = "What should you do with suspicious emails?",
-                        options = listOf(
-                            "Delete them without opening",
-                            "Open all attachments",
-                            "Reply with personal information",
-                            "Forward to friends"
-                        ),
-                        correctAnswer = 0,
-                        explanation = "Suspicious emails may contain viruses or scams. It's safest to delete them."
-                    ),
-                    QuizQuestion(
-                        questionId = "2",
-                        question = "What indicates a secure website?",
-                        options = listOf(
-                            "https:// and a lock icon",
-                            "Bright flashing colors",
-                            "Lots of pop-up ads",
-                            "No contact information"
-                        ),
-                        correctAnswer = 0,
-                        explanation = "Secure websites use https:// and display a lock icon in the address bar."
-                    )
-                )
-                "lesson_social_media" -> listOf(
-                    QuizQuestion(
-                        questionId = "1",
-                        question = "What should you share on social media?",
-                        options = listOf(
-                            "General updates and safe photos",
-                            "Your home address and phone number",
-                            "Bank account details",
-                            "Social Security number"
-                        ),
-                        correctAnswer = 0,
-                        explanation = "Only share information you're comfortable with everyone seeing. Avoid personal details."
-                    )
-                )
-                "lesson_video_calls" -> listOf(
-                    QuizQuestion(
-                        questionId = "1",
-                        question = "Which app is NOT typically used for video calls?",
-                        options = listOf(
-                            "Calculator app",
-                            "Zoom",
-                            "FaceTime",
-                            "WhatsApp"
-                        ),
-                        correctAnswer = 0,
-                        explanation = "Calculator apps are for math, not video calls. Zoom, FaceTime, and WhatsApp support video calling."
                     )
                 )
                 else -> emptyList()
@@ -301,8 +235,6 @@ fun AppNavigation() {
                 lessonId = lessonId,
                 questions = sampleQuestions,
                 onQuizComplete = { score, total ->
-                    // Update progress and navigate back to lesson
-                    // In real app, save score to user progress
                     navController.popBackStack()
                 },
                 onBack = {

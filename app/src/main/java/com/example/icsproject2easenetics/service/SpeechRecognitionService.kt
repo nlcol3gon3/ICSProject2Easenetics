@@ -23,6 +23,9 @@ class SpeechRecognitionService(private val context: Context) {
     private val _isListening = MutableStateFlow(false)
     val isListeningState: StateFlow<Boolean> = _isListening
 
+    private val _recognitionConfidence = MutableStateFlow<Float?>(null)
+    val recognitionConfidence: StateFlow<Float?> = _recognitionConfidence
+
     init {
         initializeSpeechRecognizer()
     }
@@ -42,6 +45,7 @@ class SpeechRecognitionService(private val context: Context) {
             override fun onReadyForSpeech(params: android.os.Bundle?) {
                 _isListening.value = true
                 _recognitionError.value = null
+                _recognitionConfidence.value = null
             }
 
             override fun onBeginningOfSpeech() {
@@ -62,24 +66,35 @@ class SpeechRecognitionService(private val context: Context) {
 
             override fun onError(error: Int) {
                 _isListening.value = false
-                when (error) {
-                    SpeechRecognizer.ERROR_AUDIO -> _recognitionError.value = "Audio recording error"
-                    SpeechRecognizer.ERROR_CLIENT -> _recognitionError.value = "Client side error"
-                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> _recognitionError.value = "Insufficient permissions"
-                    SpeechRecognizer.ERROR_NETWORK -> _recognitionError.value = "Network error"
-                    SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> _recognitionError.value = "Network timeout"
-                    SpeechRecognizer.ERROR_NO_MATCH -> _recognitionError.value = "No speech recognition match found"
-                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> _recognitionError.value = "Recognition service busy"
-                    SpeechRecognizer.ERROR_SERVER -> _recognitionError.value = "Server error"
-                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> _recognitionError.value = "No speech input"
-                    else -> _recognitionError.value = "Unknown recognition error"
+                val errorMessage = when (error) {
+                    SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
+                    SpeechRecognizer.ERROR_CLIENT -> "Client side error"
+                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Insufficient permissions"
+                    SpeechRecognizer.ERROR_NETWORK -> "Network error"
+                    SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Network timeout"
+                    SpeechRecognizer.ERROR_NO_MATCH -> "No speech recognized. Please speak clearly."
+                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Recognition service busy"
+                    SpeechRecognizer.ERROR_SERVER -> "Server error"
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech input detected"
+                    else -> "Unknown recognition error"
                 }
+                _recognitionError.value = errorMessage
             }
 
             override fun onResults(results: android.os.Bundle?) {
                 _isListening.value = false
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                _recognitionResult.value = matches?.get(0) ?: "No speech recognized"
+                val confidenceScores = results?.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)
+
+                val bestMatch = matches?.getOrNull(0)
+                val confidence = confidenceScores?.getOrNull(0)
+
+                _recognitionResult.value = bestMatch ?: "No speech recognized"
+                _recognitionConfidence.value = confidence
+
+                if (confidence != null && confidence < 0.3f) {
+                    _recognitionError.value = "Low confidence in recognition. Please speak clearly."
+                }
             }
 
             override fun onPartialResults(partialResults: android.os.Bundle?) {
@@ -105,6 +120,9 @@ class SpeechRecognitionService(private val context: Context) {
                 putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now...")
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000)
+                putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 5000)
             }
 
             speechRecognizer?.startListening(intent)
@@ -129,6 +147,7 @@ class SpeechRecognitionService(private val context: Context) {
     fun clearResult() {
         _recognitionResult.value = null
         _recognitionError.value = null
+        _recognitionConfidence.value = null
     }
 
     fun isAvailable(): Boolean {
