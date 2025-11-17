@@ -8,7 +8,7 @@ data class User(
     val email: String = "",
     val createdAt: Date = Date(),
     var lastLogin: Date = Date(),
-    var accessibilitySettings: AccessibilitySettings = AccessibilitySettings(),
+    var accessibilitySettings: AccessibilitySettings = AccessibilitySettings(), // Use the one from AccessibilitySettings.kt
     var mfaEnabled: Boolean = false,
     var phoneNumber: String? = null,
     var phoneVerified: Boolean = false,
@@ -23,21 +23,6 @@ data class User(
 
 enum class MfaMethod {
     NONE, EMAIL, PHONE, AUTHENTICATOR_APP
-}
-
-// FIXED: Added visualAlerts parameter with default value
-data class AccessibilitySettings(
-    val textSize: TextSize = TextSize.LARGE,
-    val highContrast: Boolean = true,
-    val voiceNarration: Boolean = true,
-    val reducedMotion: Boolean = false,
-    val visualAlerts: Boolean = true  // ADD THIS
-) {
-    constructor() : this(TextSize.LARGE, true, true, false, true) // UPDATE THIS
-}
-
-enum class TextSize {
-    SMALL, MEDIUM, LARGE, EXTRA_LARGE
 }
 
 // MFA data classes

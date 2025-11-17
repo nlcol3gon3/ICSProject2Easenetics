@@ -1,4 +1,3 @@
-// app/build.gradle.kts
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -40,6 +39,9 @@ android {
 
     kotlinOptions {
         jvmTarget = "1.8"
+        freeCompilerArgs += listOf(
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
+        )
     }
 
     buildFeatures {

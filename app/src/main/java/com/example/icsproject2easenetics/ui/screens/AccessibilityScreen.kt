@@ -17,20 +17,28 @@ import androidx.compose.material.icons.filled.Hearing
 import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Accessibility
+import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +64,25 @@ fun AccessibilityScreen(
 
     val accessibilitySettings by viewModel.accessibilitySettings.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val saveSuccess by viewModel.saveSuccess.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+
+    // Show success message
+    LaunchedEffect(saveSuccess) {
+        if (saveSuccess) {
+            // Auto-hide success message after 3 seconds
+            kotlinx.coroutines.delay(3000)
+            viewModel.clearSaveSuccess()
+        }
+    }
+
+    // Clear error after some time
+    LaunchedEffect(errorMessage) {
+        if (!errorMessage.isNullOrEmpty()) {
+            kotlinx.coroutines.delay(5000)
+            viewModel.clearError()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -86,128 +113,52 @@ fun AccessibilityScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Text Size Settings
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.TextFields, "Text Size", modifier = Modifier.size(24.dp))
-                        Spacer(modifier = Modifier.size(12.dp))
-                        Text(
-                            text = "Text Size",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Adjust the text size for better readability",
-                        style = MaterialTheme.typography.bodyMedium
+            // Success message
+            if (saveSuccess) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
                     )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Text size preview
+                ) {
                     Text(
-                        text = "Sample Text - The quick brown fox jumps over the lazy dog",
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Button(
-                        onClick = { viewModel.increaseTextSize() },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Increase Text Size")
-                    }
-
-                    Button(
-                        onClick = { viewModel.decreaseTextSize() },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Decrease Text Size")
-                    }
-                }
-            }
-
-            // Voice Settings
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.VolumeUp, "Voice Settings", modifier = Modifier.size(24.dp))
-                        Spacer(modifier = Modifier.size(12.dp))
-                        Text(
-                            text = "Voice Narration",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Speech Rate
-                    Text(
-                        text = "Speech Speed: ${"%.1f".format(voiceService.getSpeechRate())}x",
+                        text = "✅ Settings saved successfully!",
+                        modifier = Modifier.padding(16.dp),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    var speechRate by remember { mutableStateOf(voiceService.getSpeechRate()) }
-
-                    Slider(
-                        value = speechRate,
-                        onValueChange = { newRate ->
-                            speechRate = newRate
-                            voiceService.setSpeechRate(newRate)
-                        },
-                        valueRange = 0.5f..2.0f,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Slower", style = MaterialTheme.typography.bodySmall)
-                        Text("Faster", style = MaterialTheme.typography.bodySmall)
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Test voice button
-                    Button(
-                        onClick = {
-                            voiceService.speak("This is how the voice narration will sound at the current speed.")
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Test Voice Settings")
-                    }
                 }
             }
 
-            // Visual Settings
+            // Error message
+            if (!errorMessage.isNullOrEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = "❌ $errorMessage",
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+
+            // Quick Presets Section
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Visibility, "Visual Settings", modifier = Modifier.size(24.dp))
+                        Icon(Icons.Filled.Accessibility, "Presets", modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.size(12.dp))
                         Text(
-                            text = "Visual Accessibility",
+                            text = "Quick Presets",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
@@ -215,133 +166,534 @@ fun AccessibilityScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // High Contrast Toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "High Contrast Mode",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = "Improves visibility for low vision users",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-
-                        var highContrast by remember {
-                            mutableStateOf(accessibilitySettings.highContrast)
-                        }
-
-                        Switch(
-                            checked = highContrast,
-                            onCheckedChange = { enabled ->
-                                highContrast = enabled
-                                viewModel.setHighContrast(enabled)
-                            }
-                        )
-                    }
+                    Text(
+                        text = "Apply preset configurations for common needs",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Reduced Motion Toggle
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Column {
-                            Text(
-                                text = "Reduced Motion",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = "Reduces animations and transitions",
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                        Button(
+                            onClick = { viewModel.setVisionImpairedProfile() },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isLoading
+                        ) {
+                            Text("👁️ Vision")
                         }
-
-                        var reducedMotion by remember {
-                            mutableStateOf(accessibilitySettings.reducedMotion)
+                        Button(
+                            onClick = { viewModel.setHearingImpairedProfile() },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isLoading
+                        ) {
+                            Text("👂 Hearing")
                         }
-
-                        Switch(
-                            checked = reducedMotion,
-                            onCheckedChange = { enabled ->
-                                reducedMotion = enabled
-                                viewModel.setReducedMotion(enabled)
-                            }
-                        )
+                        Button(
+                            onClick = { viewModel.setMotorImpairedProfile() },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isLoading
+                        ) {
+                            Text("🖐️ Motor")
+                        }
                     }
                 }
             }
 
-            // Hearing Accessibility
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            // Text & Display Settings
+            TextDisplaySettings(
+                settings = accessibilitySettings,
+                onTextSizeChange = viewModel::setTextSize,
+                onHighContrastChange = viewModel::setHighContrast,
+                onColorBlindModeChange = viewModel::setColorBlindMode,
+                onSimplifiedLayoutChange = viewModel::setSimplifiedLayout
+            )
+
+            // Audio & Voice Settings
+            AudioVoiceSettings(
+                settings = accessibilitySettings,
+                onVoiceNarrationChange = viewModel::setVoiceNarration,
+                onAudioDescriptionChange = viewModel::setAudioDescription,
+                onVisualAlertsChange = viewModel::setVisualAlerts,
+                voiceService = voiceService
+            )
+
+            // Interaction Settings
+            InteractionSettings(
+                settings = accessibilitySettings,
+                onScreenReaderChange = viewModel::setScreenReader,
+                onButtonSizeChange = viewModel::setButtonSize,
+                onTouchDelayChange = viewModel::setTouchDelay,
+                onReducedMotionChange = viewModel::setReducedMotion
+            )
+
+            // Action Buttons
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Hearing, "Hearing", modifier = Modifier.size(24.dp))
-                        Spacer(modifier = Modifier.size(12.dp))
-                        Text(
-                            text = "Hearing Accessibility",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Visual alerts toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "Visual Alerts",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = "Show visual cues for audio notifications",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-
-                        var visualAlerts by remember {
-                            mutableStateOf(accessibilitySettings.visualAlerts)
-                        }
-
-                        Switch(
-                            checked = visualAlerts,
-                            onCheckedChange = { enabled ->
-                                visualAlerts = enabled
-                                viewModel.setVisualAlerts(enabled)
-                            }
-                        )
-                    }
+                Button(
+                    onClick = { viewModel.saveSettings() },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading
+                ) {
+                    Text(if (isLoading) "Saving..." else "Save Settings")
                 }
-            }
 
-            // Reset to defaults
-            Button(
-                onClick = { viewModel.resetToDefaults() },
-                modifier = Modifier.fillMaxWidth(),
-                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
-                )
-            ) {
-                Text("Reset to Default Settings")
+                Button(
+                    onClick = { viewModel.resetToDefaults() },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    ),
+                    enabled = !isLoading
+                ) {
+                    Text("Reset to Defaults")
+                }
             }
         }
+    }
+}
+
+@Composable
+fun TextDisplaySettings(
+    settings: com.example.icsproject2easenetics.data.models.AccessibilitySettings,
+    onTextSizeChange: (com.example.icsproject2easenetics.data.models.TextSize) -> Unit,
+    onHighContrastChange: (Boolean) -> Unit,
+    onColorBlindModeChange: (com.example.icsproject2easenetics.data.models.ColorBlindMode) -> Unit,
+    onSimplifiedLayoutChange: (Boolean) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.TextFields, "Text Display", modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.size(12.dp))
+                Text(
+                    text = "Text & Display",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Text Size
+            Text("Text Size", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.height(8.dp))
+            TextSizeSelector(
+                currentSize = settings.textSize,
+                onSizeSelected = onTextSizeChange
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // High Contrast
+            SettingToggle(
+                icon = Icons.Filled.Visibility,
+                title = "High Contrast Mode",
+                description = "Increase contrast for better visibility",
+                isEnabled = settings.highContrast,
+                onToggle = onHighContrastChange
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Color Blind Mode
+            ColorBlindModeSelector(
+                currentMode = settings.colorBlindMode,
+                onModeSelected = onColorBlindModeChange
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Simplified Layout
+            SettingToggle(
+                icon = Icons.Filled.Palette,
+                title = "Simplified Layout",
+                description = "Cleaner interface with fewer elements",
+                isEnabled = settings.simplifiedLayout,
+                onToggle = onSimplifiedLayoutChange
+            )
+        }
+    }
+}
+
+@Composable
+fun AudioVoiceSettings(
+    settings: com.example.icsproject2easenetics.data.models.AccessibilitySettings,
+    onVoiceNarrationChange: (Boolean) -> Unit,
+    onAudioDescriptionChange: (Boolean) -> Unit,
+    onVisualAlertsChange: (Boolean) -> Unit,
+    voiceService: VoiceService
+) {
+    var speechRate by remember { mutableStateOf(voiceService.getSpeechRate()) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.VolumeUp, "Audio Voice", modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.size(12.dp))
+                Text(
+                    text = "Audio & Voice",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Voice Narration
+            SettingToggle(
+                icon = Icons.Filled.VolumeUp,
+                title = "Voice Narration",
+                description = "Read lesson content aloud",
+                isEnabled = settings.voiceNarration,
+                onToggle = onVoiceNarrationChange
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Speech Rate (only show if voice narration is enabled)
+            if (settings.voiceNarration) {
+                Text(
+                    text = "Speech Speed: ${"%.1f".format(speechRate)}x",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Slider(
+                    value = speechRate,
+                    onValueChange = { newRate ->
+                        speechRate = newRate
+                        voiceService.setSpeechRate(newRate)
+                    },
+                    valueRange = 0.5f..2.0f,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Slower", style = MaterialTheme.typography.bodySmall)
+                    Text("Faster", style = MaterialTheme.typography.bodySmall)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            // Audio Description
+            SettingToggle(
+                icon = Icons.Filled.Hearing,
+                title = "Audio Descriptions",
+                description = "Describe visual elements",
+                isEnabled = settings.audioDescription,
+                onToggle = onAudioDescriptionChange
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Visual Alerts
+            SettingToggle(
+                icon = Icons.Filled.Visibility,
+                title = "Visual Alerts",
+                description = "Show visual cues for sounds",
+                isEnabled = settings.visualAlerts,
+                onToggle = onVisualAlertsChange
+            )
+        }
+    }
+}
+
+@Composable
+fun InteractionSettings(
+    settings: com.example.icsproject2easenetics.data.models.AccessibilitySettings,
+    onScreenReaderChange: (Boolean) -> Unit,
+    onButtonSizeChange: (com.example.icsproject2easenetics.data.models.ButtonSize) -> Unit,
+    onTouchDelayChange: (com.example.icsproject2easenetics.data.models.TouchDelay) -> Unit,
+    onReducedMotionChange: (Boolean) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.TouchApp, "Interaction", modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.size(12.dp))
+                Text(
+                    text = "Interaction",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Screen Reader
+            SettingToggle(
+                icon = Icons.Filled.Accessibility,
+                title = "Screen Reader Support",
+                description = "Optimize for screen readers",
+                isEnabled = settings.screenReader,
+                onToggle = onScreenReaderChange
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Button Size
+            Text("Button Size", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.height(8.dp))
+            ButtonSizeSelector(
+                currentSize = settings.buttonSize,
+                onSizeSelected = onButtonSizeChange
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Touch Delay
+            Text("Touch Delay", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.height(8.dp))
+            TouchDelaySelector(
+                currentDelay = settings.touchDelay,
+                onDelaySelected = onTouchDelayChange
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Reduced Motion
+            SettingToggle(
+                icon = Icons.Filled.TouchApp,
+                title = "Reduced Motion",
+                description = "Minimize animations and transitions",
+                isEnabled = settings.reducedMotion,
+                onToggle = onReducedMotionChange
+            )
+        }
+    }
+}
+
+@Composable
+fun TextSizeSelector(
+    currentSize: com.example.icsproject2easenetics.data.models.TextSize,
+    onSizeSelected: (com.example.icsproject2easenetics.data.models.TextSize) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        com.example.icsproject2easenetics.data.models.TextSize.values().forEach { size ->
+            val isSelected = currentSize == size
+            Card(
+                onClick = { onSizeSelected(size) },
+                modifier = Modifier.weight(1f),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = when (size) {
+                            com.example.icsproject2easenetics.data.models.TextSize.SMALL -> "A"
+                            com.example.icsproject2easenetics.data.models.TextSize.MEDIUM -> "A"
+                            com.example.icsproject2easenetics.data.models.TextSize.LARGE -> "A"
+                            com.example.icsproject2easenetics.data.models.TextSize.EXTRA_LARGE -> "A"
+                        },
+                        style = when (size) {
+                            com.example.icsproject2easenetics.data.models.TextSize.SMALL -> MaterialTheme.typography.bodyMedium
+                            com.example.icsproject2easenetics.data.models.TextSize.MEDIUM -> MaterialTheme.typography.bodyLarge
+                            com.example.icsproject2easenetics.data.models.TextSize.LARGE -> MaterialTheme.typography.titleMedium
+                            com.example.icsproject2easenetics.data.models.TextSize.EXTRA_LARGE -> MaterialTheme.typography.titleLarge
+                        }
+                    )
+                    Text(
+                        text = size.name.replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.size(4.dp))
+        }
+    }
+}
+
+@Composable
+fun ButtonSizeSelector(
+    currentSize: com.example.icsproject2easenetics.data.models.ButtonSize,
+    onSizeSelected: (com.example.icsproject2easenetics.data.models.ButtonSize) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        com.example.icsproject2easenetics.data.models.ButtonSize.values().forEach { size ->
+            val isSelected = currentSize == size
+            Card(
+                onClick = { onSizeSelected(size) },
+                modifier = Modifier.weight(1f),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = when (size) {
+                            com.example.icsproject2easenetics.data.models.ButtonSize.SMALL -> "S"
+                            com.example.icsproject2easenetics.data.models.ButtonSize.MEDIUM -> "M"
+                            com.example.icsproject2easenetics.data.models.ButtonSize.LARGE -> "L"
+                        },
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = size.name.replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.size(4.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ColorBlindModeSelector(
+    currentMode: com.example.icsproject2easenetics.data.models.ColorBlindMode,
+    onModeSelected: (com.example.icsproject2easenetics.data.models.ColorBlindMode) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column {
+        Text("Color Blind Mode", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+        Spacer(modifier = Modifier.height(8.dp))
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
+        ) {
+            OutlinedTextField(
+                value = when (currentMode) {
+                    com.example.icsproject2easenetics.data.models.ColorBlindMode.NONE -> "None"
+                    com.example.icsproject2easenetics.data.models.ColorBlindMode.PROTANOPIA -> "Protanopia (Red-Blind)"
+                    com.example.icsproject2easenetics.data.models.ColorBlindMode.DEUTERANOPIA -> "Deuteranopia (Green-Blind)"
+                    com.example.icsproject2easenetics.data.models.ColorBlindMode.TRITANOPIA -> "Tritanopia (Blue-Blind)"
+                },
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor()
+            )
+
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                com.example.icsproject2easenetics.data.models.ColorBlindMode.values().forEach { mode ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = when (mode) {
+                                    com.example.icsproject2easenetics.data.models.ColorBlindMode.NONE -> "None"
+                                    com.example.icsproject2easenetics.data.models.ColorBlindMode.PROTANOPIA -> "Protanopia (Red-Blind)"
+                                    com.example.icsproject2easenetics.data.models.ColorBlindMode.DEUTERANOPIA -> "Deuteranopia (Green-Blind)"
+                                    com.example.icsproject2easenetics.data.models.ColorBlindMode.TRITANOPIA -> "Tritanopia (Blue-Blind)"
+                                }
+                            )
+                        },
+                        onClick = {
+                            onModeSelected(mode)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TouchDelaySelector(
+    currentDelay: com.example.icsproject2easenetics.data.models.TouchDelay,
+    onDelaySelected: (com.example.icsproject2easenetics.data.models.TouchDelay) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        com.example.icsproject2easenetics.data.models.TouchDelay.values().forEach { delay ->
+            val isSelected = currentDelay == delay
+            Card(
+                onClick = { onDelaySelected(delay) },
+                modifier = Modifier.weight(1f),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = when (delay) {
+                            com.example.icsproject2easenetics.data.models.TouchDelay.NONE -> "0s"
+                            com.example.icsproject2easenetics.data.models.TouchDelay.SHORT -> "0.5s"
+                            com.example.icsproject2easenetics.data.models.TouchDelay.NORMAL -> "1s"
+                            com.example.icsproject2easenetics.data.models.TouchDelay.LONG -> "2s"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = delay.name.replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.size(4.dp))
+        }
+    }
+}
+
+@Composable
+fun SettingToggle(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    description: String,
+    isEnabled: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, title, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.size(12.dp))
+            Column {
+                Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                Text(description, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        Switch(
+            checked = isEnabled,
+            onCheckedChange = onToggle
+        )
     }
 }
