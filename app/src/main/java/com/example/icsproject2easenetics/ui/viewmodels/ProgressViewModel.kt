@@ -1,3 +1,4 @@
+// ui/viewmodels/ProgressViewModel.kt
 package com.example.icsproject2easenetics.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
@@ -5,14 +6,17 @@ import androidx.lifecycle.viewModelScope
 import com.example.icsproject2easenetics.data.models.Achievement
 import com.example.icsproject2easenetics.data.models.LearningStats
 import com.example.icsproject2easenetics.data.models.WeeklyProgress
+import com.example.icsproject2easenetics.data.repositories.ProgressRepository
 import com.example.icsproject2easenetics.service.ProgressService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.Date
 
 class ProgressViewModel : ViewModel() {
     private val progressService = ProgressService()
+    private val progressRepository = ProgressRepository()
 
     private val _learningStats = MutableStateFlow<LearningStats?>(null)
     val learningStats: StateFlow<LearningStats?> = _learningStats.asStateFlow()
@@ -30,21 +34,33 @@ class ProgressViewModel : ViewModel() {
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                // Sample data - in real app, fetch from database
-                val sampleStats = progressService.calculateLearningStats(
-                    completedLessons = 3,
-                    quizzesTaken = 2,
-                    totalQuizScore = 170, // 85% average
-                    totalQuestions = 200,
-                    learningTime = 210, // 3.5 hours
-                    lastActivity = java.util.Date()
+                // Load REAL progress data from Firebase
+                val userProgress = progressRepository.getUserProgress(userId)
+
+                // Calculate real statistics from actual user data
+                val completedLessons = userProgress.count { it.completed }
+                val quizzesTaken = userProgress.count { it.score > 0 }
+                val totalQuizScore = userProgress.sumOf { it.score }
+                val totalQuestions = if (quizzesTaken > 0) quizzesTaken * 10 else 1 // Estimate 10 questions per quiz
+                val totalLearningTime = userProgress.sumOf { it.timeSpent }
+                val lastActivity = userProgress.maxByOrNull { it.lastAccessed }?.lastAccessed?.let { Date(it) } ?: Date()
+
+                // Calculate REAL learning stats
+                val realStats = progressService.calculateLearningStats(
+                    completedLessons = completedLessons,
+                    quizzesTaken = quizzesTaken,
+                    totalQuizScore = totalQuizScore,
+                    totalQuestions = totalQuestions,
+                    learningTime = totalLearningTime,
+                    lastActivity = lastActivity
                 )
 
-                _learningStats.value = sampleStats
-                _achievements.value = progressService.getAchievements(sampleStats)
+                _learningStats.value = realStats
+                _achievements.value = progressService.getAchievements(realStats)
                 _weeklyProgress.value = progressService.getWeeklyProgress()
+
             } catch (e: Exception) {
-                // Handle error
+                // Handle error - data will remain as null/empty
             } finally {
                 _isLoading.value = false
             }

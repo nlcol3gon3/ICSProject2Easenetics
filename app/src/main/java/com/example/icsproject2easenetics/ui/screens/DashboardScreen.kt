@@ -175,7 +175,7 @@ fun DashboardScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "📊 Loading modules: ${modules.size} • Lessons: ${availableLessons.size}",
+                    text = "📊 Loading modules and lessons",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

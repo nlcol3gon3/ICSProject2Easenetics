@@ -16,8 +16,8 @@ class ProgressService {
         learningTime: Int,
         lastActivity: Date
     ): LearningStats {
-        val averageScore = if (totalQuestions > 0) {
-            (totalQuizScore.toDouble() / totalQuestions) * 100
+        val averageScore = if (quizzesTaken > 0) {
+            (totalQuizScore.toDouble() / quizzesTaken)
         } else {
             0.0
         }
@@ -31,7 +31,7 @@ class ProgressService {
             averageQuizScore = averageScore,
             totalLearningTime = learningTime,
             currentStreak = currentStreak,
-            longestStreak = maxOf(currentStreak, 0), // In real app, fetch from storage
+            longestStreak = maxOf(currentStreak, 0),
             lastActivityDate = lastActivity,
             skillsMastered = calculateSkillsMastered(completedLessons)
         )
@@ -93,39 +93,23 @@ class ProgressService {
     }
 
     fun getWeeklyProgress(): List<WeeklyProgress> {
-        // Sample data - in real app, fetch from database
-        return listOf(
-            WeeklyProgress(
-                weekStart = Date(),
-                lessonsCompleted = 3,
-                quizzesTaken = 2,
-                averageScore = 85.0,
-                learningTime = 120
-            ),
-            WeeklyProgress(
-                weekStart = Date(System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L),
-                lessonsCompleted = 2,
-                quizzesTaken = 1,
-                averageScore = 78.0,
-                learningTime = 90
-            ),
-            WeeklyProgress(
-                weekStart = Date(System.currentTimeMillis() - 14 * 24 * 60 * 60 * 1000L),
-                lessonsCompleted = 4,
-                quizzesTaken = 3,
-                averageScore = 92.0,
-                learningTime = 180
-            )
-        )
+        // In a real app, this would fetch from Firebase
+        // For now, return empty list or calculate from actual data
+        return emptyList()
     }
 
     private fun calculateCurrentStreak(lastActivity: Date): Int {
-        // Simplified - in real app, check daily activity log
         val today = Date()
         val diff = today.time - lastActivity.time
         val daysDiff = (diff / (1000 * 60 * 60 * 24)).toInt()
 
-        return if (daysDiff <= 1) 3 else 0 // Sample streak
+        return if (daysDiff <= 1) {
+            // User was active today or yesterday - continue streak
+            // In a real app, you'd calculate actual streak from daily activity log
+            3 // Placeholder - replace with actual streak calculation
+        } else {
+            0 // Streak broken
+        }
     }
 
     private fun calculateSkillsMastered(completedLessons: Int): List<String> {
@@ -133,6 +117,8 @@ class ProgressService {
         if (completedLessons >= 1) skills.add("Smartphone Basics")
         if (completedLessons >= 2) skills.add("Internet Safety")
         if (completedLessons >= 3) skills.add("Social Media")
+        if (completedLessons >= 4) skills.add("M-Pesa Fundamentals")
+        if (completedLessons >= 5) skills.add("Government Services")
         return skills
     }
 

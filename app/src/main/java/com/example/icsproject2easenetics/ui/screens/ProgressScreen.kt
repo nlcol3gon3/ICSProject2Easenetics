@@ -35,6 +35,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.icsproject2easenetics.ui.viewmodels.ProgressViewModel
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,8 +49,14 @@ fun ProgressScreen(
     val weeklyProgress by viewModel.weeklyProgress.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.loadProgressData("current_user") // In real app, use actual user ID
+    // Get current user directly from Firebase Auth
+    val currentUser = Firebase.auth.currentUser
+
+    // Load REAL progress data when screen opens
+    LaunchedEffect(currentUser) {
+        currentUser?.uid?.let { userId ->
+            viewModel.loadProgressData(userId) // Use actual user ID
+        }
     }
 
     Scaffold(
@@ -130,7 +138,6 @@ fun ProgressScreen(
                     )
                 }
 
-                // FIXED: Use items correctly for achievements
                 items(achievements) { achievement ->
                     AchievementItem(achievement = achievement)
                 }
@@ -144,7 +151,6 @@ fun ProgressScreen(
                     )
                 }
 
-                // FIXED: Use items correctly for weekly progress
                 items(weeklyProgress) { weekProgress ->
                     WeeklyProgressItem(progress = weekProgress)
                 }

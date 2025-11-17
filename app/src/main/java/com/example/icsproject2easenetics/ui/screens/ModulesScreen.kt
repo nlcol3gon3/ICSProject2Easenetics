@@ -23,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,6 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.icsproject2easenetics.ui.components.ModuleCard
 import com.example.icsproject2easenetics.ui.viewmodels.ModuleViewModel
 
+// ui/screens/ModulesScreen.kt - Remove the debug header section
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModulesScreen(
@@ -49,19 +51,7 @@ fun ModulesScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
 
     LaunchedEffect(Unit) {
-        println("🔄 ModulesScreen: Loading modules...")
         viewModel.loadAllModules()
-    }
-
-    // Debug information
-    LaunchedEffect(modules, moduleLessons) {
-        println("📊 ModulesScreen State:")
-        println("   Modules count: ${modules.size}")
-        println("   Module lessons keys: ${moduleLessons.keys}")
-        modules.forEach { module ->
-            val lessonCount = moduleLessons[module.moduleId]?.size ?: 0
-            println("   Module ${module.moduleId}: $lessonCount lessons")
-        }
     }
 
     Scaffold(
@@ -71,7 +61,7 @@ fun ModulesScreen(
                     Text(
                         text = "Learning Modules",
                         style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
@@ -108,14 +98,8 @@ fun ModulesScreen(
             ) {
                 CircularProgressIndicator()
                 Text(
-                    text = "Loading modules and lessons...",
+                    text = "Loading modules...",
                     modifier = Modifier.padding(16.dp)
-                )
-                // Show debug info while loading
-                Text(
-                    text = "Modules: ${modules.size}, Lessons map: ${moduleLessons.keys.size} keys",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         } else if (errorMessage != null) {
@@ -159,21 +143,21 @@ fun ModulesScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Debug header
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Text(
-                            text = "Debug: ${modules.size} modules, ${moduleLessons.values.sumOf { it.size }} total lessons",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(8.dp)
-                        )
-                    }
-                }
+                // REMOVED: Debug header section completely
+                // item {
+                //     Card(
+                //         modifier = Modifier.fillMaxWidth(),
+                //         colors = CardDefaults.cardColors(
+                //             containerColor = MaterialTheme.colorScheme.surfaceVariant
+                //         )
+                //     ) {
+                //         Text(
+                //             text = "Debug: ${modules.size} modules, ${moduleLessons.values.sumOf { it.size }} total lessons",
+                //             style = MaterialTheme.typography.bodySmall,
+                //             modifier = Modifier.padding(8.dp)
+                //         )
+                //     }
+                // }
 
                 if (modules.isEmpty()) {
                     item {
@@ -187,7 +171,7 @@ fun ModulesScreen(
                                 Text(
                                     text = "No Modules Available",
                                     style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                    fontWeight = FontWeight.Bold
                                 )
                                 Text(
                                     text = "Check your internet connection or try again later",
@@ -203,13 +187,10 @@ fun ModulesScreen(
                 } else {
                     items(modules) { module ->
                         val lessonCount = moduleLessons[module.moduleId]?.size ?: 0
-                        println("🎯 Displaying module: ${module.moduleId} with $lessonCount lessons")
-
                         ModuleCard(
                             module = module,
                             lessonCount = lessonCount,
                             onClick = {
-                                println("👉 Module clicked: ${module.moduleId}")
                                 onModuleClick(module.moduleId)
                             }
                         )

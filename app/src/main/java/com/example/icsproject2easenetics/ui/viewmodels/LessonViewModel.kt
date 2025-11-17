@@ -35,12 +35,9 @@ class LessonViewModel : ViewModel() {
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                println("🔄 LessonViewModel: Loading lesson: $lessonId")
-
                 // Fetch lesson from Firebase
                 val lesson = lessonRepository.getLessonById(lessonId)
                 _currentLesson.value = lesson
-                println("✅ LessonViewModel: Lesson loaded: ${lesson?.title}")
 
                 // Load REAL progress from Firebase
                 _currentUserId.value?.let { userId ->
@@ -54,12 +51,10 @@ class LessonViewModel : ViewModel() {
                         timeSpent = 0,
                         lastAccessed = System.currentTimeMillis()
                     )
-                    println("✅ LessonViewModel: Progress loaded: ${_userProgress.value}")
                 }
 
             } catch (e: Exception) {
-                println("❌ LessonViewModel: Error loading lesson: ${e.message}")
-                e.printStackTrace()
+                // Handle error - lesson will remain null
             } finally {
                 _isLoading.value = false
             }
@@ -73,8 +68,6 @@ class LessonViewModel : ViewModel() {
                 val lessonId = _currentLesson.value?.lessonId
 
                 if (userId != null && lessonId != null) {
-                    println("🔄 LessonViewModel: Marking lesson complete: $lessonId")
-
                     val result = progressRepository.markLessonComplete(
                         userId = userId,
                         lessonId = lessonId,
@@ -85,13 +78,10 @@ class LessonViewModel : ViewModel() {
                     if (result.isSuccess) {
                         // Update local state
                         _userProgress.value = _userProgress.value?.copy(completed = true)
-                        println("✅ LessonViewModel: Lesson marked complete successfully")
-                    } else {
-                        println("❌ LessonViewModel: Failed to mark lesson complete")
                     }
                 }
             } catch (e: Exception) {
-                println("❌ LessonViewModel: Error marking lesson complete: ${e.message}")
+                // Handle error silently
             }
         }
     }
@@ -104,8 +94,6 @@ class LessonViewModel : ViewModel() {
                 val percentageScore = (score.toDouble() / total * 100).toInt()
 
                 if (userId != null && lessonId != null) {
-                    println("🔄 LessonViewModel: Updating quiz score: $percentageScore%")
-
                     val result = progressRepository.updateQuizScore(
                         userId = userId,
                         lessonId = lessonId,
@@ -115,13 +103,10 @@ class LessonViewModel : ViewModel() {
                     if (result.isSuccess) {
                         // Update local state
                         _userProgress.value = _userProgress.value?.copy(score = percentageScore)
-                        println("✅ LessonViewModel: Quiz score updated successfully")
-                    } else {
-                        println("❌ LessonViewModel: Failed to update quiz score")
                     }
                 }
             } catch (e: Exception) {
-                println("❌ LessonViewModel: Error updating quiz score: ${e.message}")
+                // Handle error silently
             }
         }
     }
