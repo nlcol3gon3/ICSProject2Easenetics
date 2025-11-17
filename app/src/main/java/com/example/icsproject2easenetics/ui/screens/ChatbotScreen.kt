@@ -1,4 +1,3 @@
-// Update ChatbotScreen.kt - Add voice input
 package com.example.icsproject2easenetics.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
@@ -101,7 +100,7 @@ fun ChatbotScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "AI Learning Assistant",
+                        text = "AI Learning Assistant, Mshauri",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -191,7 +190,7 @@ fun ChatbotScreen(
                                         strokeWidth = 2.dp
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("AI Assistant is thinking...")
+                                    Text("Mshauri is thinking...")
                                 }
                             }
                         }

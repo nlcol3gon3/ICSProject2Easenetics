@@ -14,7 +14,7 @@ class ChatbotService {
                     userInput.contains("hi", ignoreCase = true) ||
                     userInput.contains("hey", ignoreCase = true) -> {
                 ChatbotResponse(
-                    message = "Hello! I'm your digital learning assistant. I can help you with smartphones, internet safety, social media, and more. What would you like to learn about today?",
+                    message = "Hello! I'm Mshauri, your digital learning assistant. I can help you with smartphones, internet safety, social media, and more. What would you like to learn about today?",
                     suggestedLessons = getRelevantLessons("basics"),
                     quickQuestions = listOf("What is a smartphone?", "How do I stay safe online?", "What is social media?")
                 )
