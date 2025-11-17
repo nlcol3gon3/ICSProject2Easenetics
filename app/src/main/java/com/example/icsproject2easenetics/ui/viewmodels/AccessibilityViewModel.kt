@@ -8,6 +8,7 @@ import com.example.icsproject2easenetics.data.models.ColorBlindMode
 import com.example.icsproject2easenetics.data.models.TextSize
 import com.example.icsproject2easenetics.data.models.TouchDelay
 import com.example.icsproject2easenetics.data.repositories.UserRepository
+import com.example.icsproject2easenetics.utils.AccessibilityManager
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
@@ -19,21 +20,7 @@ import kotlinx.coroutines.launch
 class AccessibilityViewModel : ViewModel() {
     private val userRepository = UserRepository(FirebaseFirestore.getInstance())
 
-    private val _accessibilitySettings = MutableStateFlow(
-        AccessibilitySettings(
-            textSize = TextSize.MEDIUM,
-            highContrast = false,
-            voiceNarration = true,
-            reducedMotion = false,
-            visualAlerts = true,
-            screenReader = false,
-            buttonSize = ButtonSize.MEDIUM,
-            colorBlindMode = ColorBlindMode.NONE,
-            touchDelay = TouchDelay.NORMAL,
-            audioDescription = false,
-            simplifiedLayout = false
-        )
-    )
+    private val _accessibilitySettings = MutableStateFlow(AccessibilityManager.currentSettings)
     val accessibilitySettings: StateFlow<AccessibilitySettings> = _accessibilitySettings.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -57,7 +44,9 @@ class AccessibilityViewModel : ViewModel() {
                 currentUser?.uid?.let { userId ->
                     val user = userRepository.getUser(userId)
                     user?.accessibilitySettings?.let { settings ->
+                        // Update both local state and global manager
                         _accessibilitySettings.value = settings
+                        AccessibilityManager.updateSettings(settings)
                     }
                 }
             } catch (e: Exception) {
@@ -79,6 +68,10 @@ class AccessibilityViewModel : ViewModel() {
                     user?.let {
                         val updatedUser = it.copy(accessibilitySettings = _accessibilitySettings.value)
                         userRepository.updateUser(updatedUser)
+
+                        // Update global manager
+                        AccessibilityManager.updateSettings(_accessibilitySettings.value)
+
                         _saveSuccess.value = true
                     } ?: run {
                         _errorMessage.value = "User profile not found"
@@ -182,12 +175,15 @@ class AccessibilityViewModel : ViewModel() {
     }
 
     fun resetToDefaults() {
-        _accessibilitySettings.value = AccessibilitySettings()
+        val defaultSettings = AccessibilitySettings()
+        _accessibilitySettings.value = defaultSettings
+        AccessibilityManager.updateSettings(defaultSettings)
         saveSettings()
     }
 
     private fun updateSettings(update: (AccessibilitySettings) -> AccessibilitySettings) {
-        _accessibilitySettings.value = update(_accessibilitySettings.value)
+        val newSettings = update(_accessibilitySettings.value)
+        _accessibilitySettings.value = newSettings
         _saveSuccess.value = false
         _errorMessage.value = null
     }

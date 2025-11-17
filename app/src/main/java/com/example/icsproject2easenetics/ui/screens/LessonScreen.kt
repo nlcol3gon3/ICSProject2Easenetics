@@ -45,6 +45,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.icsproject2easenetics.ui.components.AccessibleButton
+import com.example.icsproject2easenetics.utils.AccessibilityManager
 import com.example.icsproject2easenetics.data.models.Lesson
 import com.example.icsproject2easenetics.data.models.UserProgress
 import com.example.icsproject2easenetics.data.models.DifficultyLevel
@@ -89,7 +91,7 @@ fun LessonScreen(
                 title = {
                     Text(
                         text = currentLesson?.title?.cleanMarkdown() ?: "Lesson",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                         fontWeight = FontWeight.Bold,
                         maxLines = 1
                     )
@@ -193,26 +195,27 @@ fun LessonScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = "Loading lesson from Firebase...",
+                            style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
                             textAlign = TextAlign.Center
                         )
                     } else {
                         Text(
                             text = "Lesson not found",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = AccessibilityManager.getScaledTitleMedium(), // CHANGED
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "The lesson might not exist or there might be a connection issue.",
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.bodyMedium
+                            style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
+                            textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { lessonViewModel.loadLesson(lessonId) }) {
+                        AccessibleButton(onClick = { lessonViewModel.loadLesson(lessonId) }) { // CHANGED
                             Text("Try Again")
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Button(
+                        AccessibleButton( // CHANGED
                             onClick = onBack,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.secondary
@@ -257,12 +260,12 @@ fun LessonContent(
                 ) {
                     Text(
                         text = "Your Progress",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = AccessibilityManager.getScaledTitleMedium(), // CHANGED
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = if (progress.completed) "Completed" else "In Progress",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
                         color = if (progress.completed) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -286,7 +289,7 @@ fun LessonContent(
             ) {
                 Text(
                     text = "About This Lesson".cleanMarkdown(),
-                    style = MaterialTheme.typography.titleLarge,
+                    style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                     fontWeight = FontWeight.Bold
                 )
 
@@ -294,7 +297,7 @@ fun LessonContent(
 
                 Text(
                     text = lesson.description.cleanMarkdown(),
-                    style = MaterialTheme.typography.bodyLarge
+                    style = AccessibilityManager.getScaledBodyLarge() // CHANGED
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -318,7 +321,7 @@ fun LessonContent(
                 ) {
                     Text(
                         text = "Lesson Content".cleanMarkdown(),
-                        style = MaterialTheme.typography.titleLarge,
+                        style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                         fontWeight = FontWeight.Bold
                     )
 
@@ -340,7 +343,7 @@ fun LessonContent(
 
                 Text(
                     text = lesson.content.cleanMarkdown(),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = AccessibilityManager.getScaledBodyLarge(), // CHANGED
                     lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.3
                 )
             }
@@ -471,8 +474,17 @@ fun MetadataRow(label: String, value: String) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, fontWeight = FontWeight.SemiBold)
+        Text(
+            label,
+            style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            value,
+            style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
@@ -500,10 +512,14 @@ fun LessonBottomBar(
                     Icon(Icons.Filled.CheckCircle, "Completed", tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.size(8.dp))
                     Column {
-                        Text("Lesson Completed!".cleanMarkdown(), fontWeight = FontWeight.Bold)
+                        Text(
+                            "Lesson Completed!".cleanMarkdown(),
+                            style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
+                            fontWeight = FontWeight.Bold
+                        )
                         Text(
                             "Great job! You've mastered this topic.".cleanMarkdown(),
-                            style = MaterialTheme.typography.bodySmall
+                            style = AccessibilityManager.getScaledBodySmall() // CHANGED
                         )
                     }
                 }
@@ -514,18 +530,18 @@ fun LessonBottomBar(
                 ) {
                     // Only show quiz button if lesson has quiz
                     if (hasQuiz) {
-                        Button(
+                        AccessibleButton( // CHANGED
                             onClick = onStartQuiz,
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary
                             )
                         ) {
-                            Text("Take Quiz".cleanMarkdown(), style = MaterialTheme.typography.titleMedium)
+                            Text("Take Quiz".cleanMarkdown(), style = AccessibilityManager.getScaledBodyMedium()) // CHANGED
                         }
                     }
 
-                    Button(
+                    AccessibleButton( // CHANGED
                         onClick = onMarkComplete,
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
@@ -535,7 +551,7 @@ fun LessonBottomBar(
                     ) {
                         Text(
                             if (hasQuiz) "Skip & Mark Complete".cleanMarkdown() else "Mark Complete".cleanMarkdown(),
-                            style = MaterialTheme.typography.titleMedium
+                            style = AccessibilityManager.getScaledBodyMedium() // CHANGED
                         )
                     }
                 }

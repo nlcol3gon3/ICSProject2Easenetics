@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.icsproject2easenetics.utils.AccessibilityManager
 import com.example.icsproject2easenetics.ui.viewmodels.ProgressViewModel
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -65,7 +66,7 @@ fun ProgressScreen(
                 title = {
                     Text(
                         text = "My Progress",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -104,13 +105,13 @@ fun ProgressScreen(
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
                                 text = "🌟 Your Learning Journey",
-                                style = MaterialTheme.typography.titleLarge,
+                                style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = viewModel.getMotivationalMessage(),
-                                style = MaterialTheme.typography.bodyLarge
+                                style = AccessibilityManager.getScaledBodyLarge() // CHANGED
                             )
                         }
                     }
@@ -120,7 +121,7 @@ fun ProgressScreen(
                     // Learning Stats
                     Text(
                         text = "📊 Learning Statistics",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -133,7 +134,7 @@ fun ProgressScreen(
                     // Achievements
                     Text(
                         text = "🏆 Achievements",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -146,7 +147,7 @@ fun ProgressScreen(
                     // Weekly Progress
                     Text(
                         text = "📈 Weekly Progress",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -220,13 +221,13 @@ fun LearningStatsCard(stats: com.example.icsproject2easenetics.data.models.Learn
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "✅ Skills Mastered:",
-                    style = MaterialTheme.typography.titleSmall,
+                    style = AccessibilityManager.getScaledTitleSmall(), // CHANGED
                     fontWeight = FontWeight.Bold
                 )
                 stats?.skillsMastered?.forEach { skill ->
                     Text(
                         text = "• $skill",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
                         modifier = Modifier.padding(vertical = 2.dp)
                     )
                 }
@@ -240,16 +241,16 @@ fun StatItem(value: String, label: String, icon: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = icon,
-            style = MaterialTheme.typography.headlineSmall
+            style = AccessibilityManager.getScaledTitleLarge() // CHANGED
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.titleLarge,
+            style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
             fontWeight = FontWeight.Bold
         )
         Text(
             text = label,
-            style = MaterialTheme.typography.bodySmall,
+            style = AccessibilityManager.getScaledBodySmall(), // CHANGED
             textAlign = TextAlign.Center
         )
     }
@@ -275,19 +276,19 @@ fun AchievementItem(achievement: com.example.icsproject2easenetics.data.models.A
         ) {
             Text(
                 text = achievement.iconRes,
-                style = MaterialTheme.typography.headlineMedium,
+                style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                 modifier = Modifier.padding(end = 16.dp)
             )
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = achievement.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = AccessibilityManager.getScaledTitleMedium(), // CHANGED
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = achievement.description,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = AccessibilityManager.getScaledBodyMedium() // CHANGED
                 )
 
                 if (!achievement.unlocked) {
@@ -298,13 +299,13 @@ fun AchievementItem(achievement: com.example.icsproject2easenetics.data.models.A
                     )
                     Text(
                         text = "${achievement.currentProgress}/${achievement.target}",
-                        style = MaterialTheme.typography.bodySmall
+                        style = AccessibilityManager.getScaledBodySmall() // CHANGED
                     )
                 } else {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "✅ Unlocked!",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = AccessibilityManager.getScaledBodySmall(), // CHANGED
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -321,8 +322,15 @@ fun WeeklyProgressItem(progress: com.example.icsproject2easenetics.data.models.W
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Week Progress", fontWeight = FontWeight.Bold)
-                Text("Score: ${String.format("%.0f%%", progress.averageScore)}")
+                Text(
+                    "Week Progress",
+                    style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "Score: ${String.format("%.0f%%", progress.averageScore)}",
+                    style = AccessibilityManager.getScaledBodyMedium() // CHANGED
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -342,7 +350,13 @@ fun WeeklyProgressItem(progress: com.example.icsproject2easenetics.data.models.W
 @Composable
 fun ProgressMetric(icon: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = icon, style = MaterialTheme.typography.bodyLarge)
-        Text(text = value, style = MaterialTheme.typography.bodySmall)
+        Text(
+            text = icon,
+            style = AccessibilityManager.getScaledBodyLarge() // CHANGED
+        )
+        Text(
+            text = value,
+            style = AccessibilityManager.getScaledBodySmall() // CHANGED
+        )
     }
 }

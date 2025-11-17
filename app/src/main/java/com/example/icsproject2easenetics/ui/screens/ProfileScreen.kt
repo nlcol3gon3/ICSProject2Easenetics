@@ -43,6 +43,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.icsproject2easenetics.ui.components.AccessibleButton
+import com.example.icsproject2easenetics.utils.AccessibilityManager
 import com.example.icsproject2easenetics.ui.viewmodels.AuthViewModel
 import com.example.icsproject2easenetics.ui.viewmodels.ProfileViewModel
 
@@ -71,7 +73,7 @@ fun ProfileScreen(
                 title = {
                     Text(
                         text = "My Profile",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -104,7 +106,7 @@ fun ProfileScreen(
                 ) {
                     Text(
                         text = "Personal Information",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                         fontWeight = FontWeight.Bold
                     )
 
@@ -114,8 +116,15 @@ fun ProfileScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Name", fontWeight = FontWeight.Medium)
-                        Text(userProfile?.name ?: "Loading...")
+                        Text(
+                            "Name",
+                            style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            userProfile?.name ?: "Loading...",
+                            style = AccessibilityManager.getScaledBodyMedium() // CHANGED
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -124,8 +133,15 @@ fun ProfileScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Email", fontWeight = FontWeight.Medium)
-                        Text(currentUser?.email ?: "Not available")
+                        Text(
+                            "Email",
+                            style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            currentUser?.email ?: "Not available",
+                            style = AccessibilityManager.getScaledBodyMedium() // CHANGED
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -134,8 +150,15 @@ fun ProfileScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Member Since", fontWeight = FontWeight.Medium)
-                        Text(userProfile?.createdAt?.toString()?.substring(0, 10) ?: "Unknown")
+                        Text(
+                            "Member Since",
+                            style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            userProfile?.createdAt?.toString()?.substring(0, 10) ?: "Unknown",
+                            style = AccessibilityManager.getScaledBodyMedium() // CHANGED
+                        )
                     }
                 }
             }
@@ -150,22 +173,16 @@ fun ProfileScreen(
                 ) {
                     Text(
                         text = "Accessibility",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                         fontWeight = FontWeight.Bold
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Accessibility Settings Button
-                    Button(
+                    AccessibleButton( // CHANGED
                         onClick = onAccessibilityClick,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically
@@ -178,7 +195,7 @@ fun ProfileScreen(
                             Spacer(modifier = Modifier.size(12.dp))
                             Text(
                                 text = "Accessibility Settings",
-                                style = MaterialTheme.typography.titleMedium
+                                style = AccessibilityManager.getScaledBodyMedium() // CHANGED
                             )
                         }
                     }
@@ -187,7 +204,7 @@ fun ProfileScreen(
 
                     Text(
                         text = "Customize text size, voice settings, and visual preferences for better accessibility",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = AccessibilityManager.getScaledBodySmall(), // CHANGED
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -356,26 +373,24 @@ fun ProfileScreen(
             }
 
             // Logout Button
-            Button(
+            AccessibleButton( // CHANGED
                 onClick = {
                     authViewModel.logout()
                     onLogout()
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
+                modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 )
             ) {
-                Text("Logout", style = MaterialTheme.typography.titleMedium)
+                Text("Logout", style = AccessibilityManager.getScaledBodyMedium()) // CHANGED
             }
 
             // App Version
             Text(
                 text = "Easenetics v1.0.0",
-                style = MaterialTheme.typography.bodySmall,
+                style = AccessibilityManager.getScaledBodySmall(), // CHANGED
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
@@ -389,7 +404,15 @@ fun SettingPreviewRow(setting: String, value: String) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(setting, fontWeight = FontWeight.Medium)
-        Text(value, color = MaterialTheme.colorScheme.primary)
+        Text(
+            setting,
+            style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
+            fontWeight = FontWeight.Medium
+        )
+        Text(
+            value,
+            style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
+            color = MaterialTheme.colorScheme.primary
+        )
     }
 }

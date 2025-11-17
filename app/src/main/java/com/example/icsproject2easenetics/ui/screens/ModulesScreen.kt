@@ -34,10 +34,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.icsproject2easenetics.ui.components.AccessibleButton
+import com.example.icsproject2easenetics.utils.AccessibilityManager
 import com.example.icsproject2easenetics.ui.components.ModuleCard
 import com.example.icsproject2easenetics.ui.viewmodels.ModuleViewModel
 
-// ui/screens/ModulesScreen.kt - Remove the debug header section
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModulesScreen(
@@ -60,7 +61,7 @@ fun ModulesScreen(
                 title = {
                     Text(
                         text = "Learning Modules",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -99,6 +100,7 @@ fun ModulesScreen(
                 CircularProgressIndicator()
                 Text(
                     text = "Loading modules...",
+                    style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
                     modifier = Modifier.padding(16.dp)
                 )
             }
@@ -121,15 +123,16 @@ fun ModulesScreen(
                     ) {
                         Text(
                             text = "Error Loading Data",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = AccessibilityManager.getScaledTitleMedium(), // CHANGED
                             color = MaterialTheme.colorScheme.error
                         )
                         Text(
                             text = errorMessage ?: "An error occurred",
+                            style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
                             modifier = Modifier.padding(vertical = 8.dp),
                             textAlign = TextAlign.Center
                         )
-                        Button(onClick = { viewModel.loadAllModules() }) {
+                        AccessibleButton(onClick = { viewModel.loadAllModules() }) { // CHANGED
                             Text("Try Again")
                         }
                     }
@@ -143,22 +146,6 @@ fun ModulesScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // REMOVED: Debug header section completely
-                // item {
-                //     Card(
-                //         modifier = Modifier.fillMaxWidth(),
-                //         colors = CardDefaults.cardColors(
-                //             containerColor = MaterialTheme.colorScheme.surfaceVariant
-                //         )
-                //     ) {
-                //         Text(
-                //             text = "Debug: ${modules.size} modules, ${moduleLessons.values.sumOf { it.size }} total lessons",
-                //             style = MaterialTheme.typography.bodySmall,
-                //             modifier = Modifier.padding(8.dp)
-                //         )
-                //     }
-                // }
-
                 if (modules.isEmpty()) {
                     item {
                         Card(
@@ -170,15 +157,16 @@ fun ModulesScreen(
                             ) {
                                 Text(
                                     text = "No Modules Available",
-                                    style = MaterialTheme.typography.titleLarge,
+                                    style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
                                     text = "Check your internet connection or try again later",
+                                    style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
                                     modifier = Modifier.padding(16.dp),
                                     textAlign = TextAlign.Center
                                 )
-                                Button(onClick = { viewModel.loadAllModules() }) {
+                                AccessibleButton(onClick = { viewModel.loadAllModules() }) { // CHANGED
                                     Text("Retry Loading")
                                 }
                             }

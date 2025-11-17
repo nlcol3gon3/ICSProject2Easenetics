@@ -38,6 +38,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import com.example.icsproject2easenetics.ui.components.AccessibleButton
+import com.example.icsproject2easenetics.utils.AccessibilityManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -111,8 +113,8 @@ fun LoginScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Welcome Back", // FIXED: Added 'text =' parameter
-                        style = MaterialTheme.typography.headlineSmall,
+                        text = "Welcome Back",
+                        style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                         fontWeight = FontWeight.Bold
                     )
 
@@ -170,15 +172,13 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     // Login Button
-                    Button(
+                    AccessibleButton( // CHANGED
                         onClick = {
                             if (email.isNotBlank() && password.isNotBlank()) {
                                 viewModel.login(email, password)
                             }
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
                     ) {
                         if (isLoading) {
@@ -187,7 +187,7 @@ fun LoginScreen(
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                         } else {
-                            Text("Sign In", style = MaterialTheme.typography.titleMedium)
+                            Text("Sign In", style = AccessibilityManager.getScaledBodyMedium()) // CHANGED
                         }
                     }
 

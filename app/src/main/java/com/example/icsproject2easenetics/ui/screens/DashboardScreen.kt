@@ -17,7 +17,7 @@ import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -40,12 +40,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.icsproject2easenetics.ui.components.AccessibleButton
 import com.example.icsproject2easenetics.ui.components.LessonCard
 import com.example.icsproject2easenetics.ui.components.ProgressCard
+import com.example.icsproject2easenetics.utils.AccessibilityManager
 import com.example.icsproject2easenetics.ui.viewmodels.UserViewModel
 import com.example.icsproject2easenetics.ui.viewmodels.AuthViewModel
 import com.example.icsproject2easenetics.ui.viewmodels.ModuleViewModel
 import com.example.icsproject2easenetics.ui.viewmodels.LessonViewModel
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -123,7 +127,7 @@ fun DashboardScreen(
                 title = {
                     Text(
                         text = "Easenetics",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = AccessibilityManager.getScaledTitleLarge(),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -171,12 +175,12 @@ fun DashboardScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "Loading your learning dashboard...",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = AccessibilityManager.getScaledBodyMedium()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "📊 Loading modules and lessons",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = AccessibilityManager.getScaledBodySmall(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -202,19 +206,19 @@ fun DashboardScreen(
                     ) {
                         Text(
                             text = "Connection Issue",
-                            style = MaterialTheme.typography.titleLarge,
+                            style = AccessibilityManager.getScaledTitleLarge(),
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = userError ?: modulesError ?: "Unable to load data",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = AccessibilityManager.getScaledBodyMedium(),
                             color = MaterialTheme.colorScheme.onErrorContainer,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(20.dp))
-                        Button(
+                        AccessibleButton(
                             onClick = {
                                 currentUser?.uid?.let { userId ->
                                     userViewModel.loadUserProgress(userId)
@@ -223,7 +227,7 @@ fun DashboardScreen(
                                 }
                             }
                         ) {
-                            Text("Try Again")
+                            Text("Try Again", style = AccessibilityManager.getScaledBodyMedium())
                         }
                     }
                 }
@@ -251,14 +255,14 @@ fun DashboardScreen(
                         ) {
                             Text(
                                 text = if (firstName.isNotEmpty()) "Karibu $firstName!" else "Karibu Easenetics!",
-                                style = MaterialTheme.typography.headlineSmall,
+                                style = AccessibilityManager.getScaledTitleLarge(),
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Learn digital skills at your own pace with our easy-to-follow lessons",
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = AccessibilityManager.getScaledBodyMedium(),
                                 textAlign = TextAlign.Center
                             )
 
@@ -280,7 +284,7 @@ fun DashboardScreen(
                     // Progress Overview with REAL data
                     ProgressCard(
                         completedLessons = completedLessons,
-                        totalLessons = if (totalLessons > 0) totalLessons else 1, // Avoid division by zero
+                        totalLessons = if (totalLessons > 0) totalLessons else 1,
                         averageScore = averageScore
                     )
 
@@ -301,12 +305,12 @@ fun DashboardScreen(
                             ) {
                                 Text(
                                     text = "Total Learning Time",
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = AccessibilityManager.getScaledBodyMedium(),
                                     fontWeight = FontWeight.Medium
                                 )
                                 Text(
                                     text = formatLearningTime(totalLearningTime),
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = AccessibilityManager.getScaledBodyMedium(),
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -326,7 +330,7 @@ fun DashboardScreen(
                         ) {
                             Text(
                                 text = "Structured Learning",
-                                style = MaterialTheme.typography.titleLarge,
+                                style = AccessibilityManager.getScaledTitleLarge(),
                                 fontWeight = FontWeight.Bold
                             )
 
@@ -334,7 +338,7 @@ fun DashboardScreen(
 
                             Text(
                                 text = "Follow our step-by-step modules designed specifically for Kenyan seniors",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = AccessibilityManager.getScaledBodyMedium()
                             )
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -358,7 +362,7 @@ fun DashboardScreen(
                                     if (modules.size > 3) {
                                         Text(
                                             text = "... and ${modules.size - 3} more modules",
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = AccessibilityManager.getScaledBodySmall(),
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.padding(top = 8.dp)
                                         )
@@ -368,11 +372,9 @@ fun DashboardScreen(
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            Button(
+                            AccessibleButton(
                                 onClick = onModulesClick,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(50.dp)
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically
@@ -383,7 +385,10 @@ fun DashboardScreen(
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.size(8.dp))
-                                    Text("Browse All ${modules.size} Modules")
+                                    Text(
+                                        "Browse All ${modules.size} Modules",
+                                        style = AccessibilityManager.getScaledBodyMedium()
+                                    )
                                 }
                             }
                         }
@@ -393,7 +398,7 @@ fun DashboardScreen(
                 item {
                     Text(
                         text = "Featured Lessons",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = AccessibilityManager.getScaledTitleLarge(),
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -431,13 +436,13 @@ fun DashboardScreen(
                             ) {
                                 Text(
                                     text = "No Lessons Available",
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = AccessibilityManager.getScaledBodyMedium(),
                                     textAlign = TextAlign.Center
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = "Lessons will appear here once they are loaded from Firebase",
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = AccessibilityManager.getScaledBodySmall(),
                                     textAlign = TextAlign.Center,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -518,13 +523,13 @@ private fun DashboardStat(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = value,
-            style = MaterialTheme.typography.titleMedium,
+            style = AccessibilityManager.getScaledTitleMedium(),
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
         Text(
             text = label,
-            style = MaterialTheme.typography.bodySmall,
+            style = AccessibilityManager.getScaledBodySmall(),
             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
         )
     }
@@ -542,13 +547,13 @@ private fun ModuleProgressRow(moduleName: String, completed: Int, total: Int) {
     ) {
         Text(
             text = moduleName,
-            style = MaterialTheme.typography.bodyMedium,
+            style = AccessibilityManager.getScaledBodyMedium(),
             maxLines = 1,
             modifier = Modifier.weight(1f)
         )
         Text(
             text = "$completed/$total",
-            style = MaterialTheme.typography.bodySmall,
+            style = AccessibilityManager.getScaledBodySmall(),
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Medium
         )

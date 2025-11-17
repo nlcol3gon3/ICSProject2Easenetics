@@ -49,6 +49,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.icsproject2easenetics.ui.components.AccessibleButton
+import com.example.icsproject2easenetics.utils.AccessibilityManager
 import com.example.icsproject2easenetics.service.SpeechRecognitionService
 import com.example.icsproject2easenetics.service.SuggestedLesson
 import com.example.icsproject2easenetics.ui.viewmodels.ChatbotViewModel
@@ -101,7 +103,7 @@ fun ChatbotScreen(
                 title = {
                     Text(
                         text = "AI Learning Assistant, Mshauri",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -397,6 +399,7 @@ fun ChatMessageBubble(message: com.example.icsproject2easenetics.ui.viewmodels.C
         ) {
             Text(
                 text = message.content,
+                style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
                 modifier = Modifier.padding(12.dp),
                 color = if (message.isUser) {
                     MaterialTheme.colorScheme.onPrimary

@@ -41,6 +41,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import com.example.icsproject2easenetics.ui.components.AccessibleButton
+import com.example.icsproject2easenetics.utils.AccessibilityManager
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -202,13 +204,14 @@ fun RegisterScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     // Register Button
-                    Button(
+                    AccessibleButton( // CHANGED
                         onClick = {
                             if (name.isNotBlank() && email.isNotBlank() &&
                                 password.isNotBlank() && confirmPassword.isNotBlank()) {
                                 if (password == confirmPassword) {
                                     viewModel.register(name, email, password)
                                 }
+                                viewModel.register(name, email, password)
                             }
                         },
                         modifier = Modifier
@@ -224,7 +227,11 @@ fun RegisterScreen(
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                         } else {
-                            Text("Create Account", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                "Create Account",
+                                style = AccessibilityManager.getScaledBodyMedium(),
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
 
@@ -233,8 +240,9 @@ fun RegisterScreen(
                     // Login Link
                     TextButton(onClick = onNavigateToLogin) {
                         Text(
-                            "Already have an account? Sign in",
-                            style = MaterialTheme.typography.bodyMedium
+                            text = "Already have an account?",
+                            style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
