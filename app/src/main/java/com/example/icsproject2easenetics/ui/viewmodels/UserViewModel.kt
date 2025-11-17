@@ -66,23 +66,25 @@ class UserViewModel : ViewModel() {
                 val mockLessons = listOf(
                     Lesson(
                         lessonId = "lesson_smartphone_basics",
+                        moduleId = "module_1", // Add this
                         title = "Getting Started with Your Smartphone",
-                        description = "Learn the basics of using your smartphone",
+                        objective = "Learn the basics of using your smartphone", // Use objective instead of description
+                        description = "Basic smartphone functions",
                         content = "Full lesson content about smartphone basics...",
                         duration = 15,
-                        difficulty = com.example.icsproject2easenetics.data.models.DifficultyLevel.BEGINNER,
-                        category = com.example.icsproject2easenetics.data.models.LessonCategory.SMARTPHONE_BASICS,
-                        order = 1
+                        order = 1,
+                        hasQuiz = true
                     ),
                     Lesson(
                         lessonId = "lesson_internet_safety",
+                        moduleId = "module_4", // Add this
                         title = "Safe Internet Browsing",
-                        description = "Stay safe while browsing the internet",
+                        objective = "Stay safe while browsing the internet",
+                        description = "Internet safety basics",
                         content = "Full lesson content about internet safety...",
                         duration = 20,
-                        difficulty = com.example.icsproject2easenetics.data.models.DifficultyLevel.BEGINNER,
-                        category = com.example.icsproject2easenetics.data.models.LessonCategory.ONLINE_SAFETY,
-                        order = 2
+                        order = 2,
+                        hasQuiz = true
                     )
                 )
                 _availableLessons.value = mockLessons

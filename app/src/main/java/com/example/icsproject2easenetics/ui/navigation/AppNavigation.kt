@@ -14,6 +14,8 @@ import com.example.icsproject2easenetics.ui.screens.DashboardScreen
 import com.example.icsproject2easenetics.ui.screens.LessonScreen
 import com.example.icsproject2easenetics.ui.screens.LoginScreen
 import com.example.icsproject2easenetics.ui.screens.MfaVerificationScreen
+import com.example.icsproject2easenetics.ui.screens.ModuleLessonsScreen
+import com.example.icsproject2easenetics.ui.screens.ModulesScreen
 import com.example.icsproject2easenetics.ui.screens.OnboardingScreen
 import com.example.icsproject2easenetics.ui.screens.ProgressScreen
 import com.example.icsproject2easenetics.ui.screens.ProfileScreen
@@ -101,6 +103,9 @@ fun AppNavigation() {
                 },
                 onProgressClick = {
                     navController.navigate("progress")
+                },
+                onModulesClick = {
+                    navController.navigate("modules")
                 }
             )
         }
@@ -185,6 +190,35 @@ fun AppNavigation() {
             )
         }
 
+        // Modules Screen - NEW
+        composable("modules") {
+            ModulesScreen(
+                onBack = {
+                    navController.popBackStack()
+                },
+                onModuleClick = { moduleId ->
+                    navController.navigate("module_lessons/$moduleId")
+                }
+            )
+        }
+
+        // Module Lessons Screen - NEW
+        composable(
+            "module_lessons/{moduleId}",
+            arguments = listOf(navArgument("moduleId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val moduleId = backStackEntry.arguments?.getString("moduleId") ?: ""
+            ModuleLessonsScreen(
+                moduleId = moduleId,
+                onBack = {
+                    navController.popBackStack()
+                },
+                onLessonClick = { lessonId ->
+                    navController.navigate("lesson/$lessonId")
+                }
+            )
+        }
+
         // Lesson Screen with parameter
         composable(
             "lesson/{lessonId}",
@@ -196,7 +230,7 @@ fun AppNavigation() {
                 onBack = {
                     navController.popBackStack()
                 },
-                onStartQuiz = { quizLessonId, questions ->
+                onStartQuiz = { quizLessonId -> // FIXED: Removed the second parameter
                     navController.navigate("quiz/$quizLessonId")
                 },
                 onMarkComplete = {
@@ -212,11 +246,11 @@ fun AppNavigation() {
         ) { backStackEntry ->
             val lessonId = backStackEntry.arguments?.getString("lessonId") ?: ""
 
-            // Sample questions
+            // Sample questions - In real implementation, these will be fetched from Firebase
             val sampleQuestions = when (lessonId) {
-                "lesson_smartphone_basics" -> listOf(
+                "lesson_1_1" -> listOf(
                     QuizQuestion(
-                        questionId = "1",
+                        questionId = "q1_1_1",
                         question = "What is the main function of a smartphone?",
                         options = listOf(
                             "Making calls and accessing the internet",
@@ -226,6 +260,32 @@ fun AppNavigation() {
                         ),
                         correctAnswer = 0,
                         explanation = "Smartphones are versatile devices that combine calling, internet access, photography, and many other functions."
+                    ),
+                    QuizQuestion(
+                        questionId = "q1_1_2",
+                        question = "How do you wake up your smartphone?",
+                        options = listOf(
+                            "Press the power button",
+                            "Shake the phone",
+                            "Say 'wake up'",
+                            "Plug it into charging"
+                        ),
+                        correctAnswer = 0,
+                        explanation = "The power button is used to wake up the phone from sleep mode."
+                    )
+                )
+                "lesson_3_1" -> listOf(
+                    QuizQuestion(
+                        questionId = "q3_1_1",
+                        question = "What is M-Pesa?",
+                        options = listOf(
+                            "A mobile money service",
+                            "A type of smartphone",
+                            "A social media app",
+                            "A government website"
+                        ),
+                        correctAnswer = 0,
+                        explanation = "M-Pesa is Kenya's popular mobile money service that lets you send, receive, and store money on your phone."
                     )
                 )
                 else -> emptyList()
@@ -235,6 +295,7 @@ fun AppNavigation() {
                 lessonId = lessonId,
                 questions = sampleQuestions,
                 onQuizComplete = { score, total ->
+                    // In real implementation, save progress to Firebase
                     navController.popBackStack()
                 },
                 onBack = {

@@ -59,7 +59,7 @@ import com.example.icsproject2easenetics.ui.viewmodels.LessonViewModel
 fun LessonScreen(
     lessonId: String,
     onBack: () -> Unit,
-    onStartQuiz: (String, List<QuizQuestion>) -> Unit,
+    onStartQuiz: (String) -> Unit, // CHANGED: Removed questions parameter
     onMarkComplete: () -> Unit
 ) {
     val context = LocalContext.current
@@ -150,9 +150,8 @@ fun LessonScreen(
                     },
                     onStartQuiz = {
                         voiceService.stopSpeaking()
-                        if (currentLesson!!.quizQuestions.isNotEmpty()) {
-                            onStartQuiz(currentLesson!!.lessonId, currentLesson!!.quizQuestions)
-                        }
+                        // CHANGED: Just pass the lessonId, questions will be loaded in QuizScreen
+                        onStartQuiz(currentLesson!!.lessonId)
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -395,7 +394,8 @@ fun LessonContent(
         }
 
         // Quiz reminder (if lesson has quiz)
-        if (lesson.hasQuiz && lesson.quizQuestions.isNotEmpty()) {
+        // CHANGED: Removed the quizQuestions.isEmpty() check
+        if (lesson.hasQuiz) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -413,8 +413,9 @@ fun LessonContent(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    // CHANGED: Removed specific question count since we'll load from LocalDataSource
                     Text(
-                        text = "This lesson includes a ${lesson.quizQuestions.size}-question quiz to reinforce what you've learned.",
+                        text = "This lesson includes a quiz to reinforce what you've learned.",
                         style = MaterialTheme.typography.bodyMedium
                     )
 
@@ -435,7 +436,8 @@ fun LessonMetadata(lesson: Lesson) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         MetadataRow("Duration", "${lesson.duration} minutes")
         MetadataRow("Difficulty", formatDifficulty(lesson.difficulty))
-        MetadataRow("Category", formatCategory(lesson.category))
+        // CHANGED: Use module information instead of category
+        MetadataRow("Module", getModuleName(lesson.moduleId))
     }
 }
 
@@ -527,131 +529,18 @@ private fun formatDifficulty(difficulty: DifficultyLevel): String {
     }
 }
 
-private fun formatCategory(category: LessonCategory): String {
-    return when (category) {
-        LessonCategory.SMARTPHONE_BASICS -> "📱 Smartphone Basics"
-        LessonCategory.INTERNET_BROWSING -> "🌐 Internet Browsing"
-        LessonCategory.SOCIAL_MEDIA -> "👥 Social Media"
-        LessonCategory.ONLINE_SAFETY -> "🔒 Online Safety"
-        LessonCategory.COMMUNICATION -> "💬 Communication"
+// NEW: Helper function to get module name from moduleId
+private fun getModuleName(moduleId: String): String {
+    return when (moduleId) {
+        "module_1" -> "📱 Smartphone Fundamentals"
+        "module_2" -> "💬 Communication"
+        "module_3" -> "💰 M-Pesa"
+        "module_4" -> "🔒 Online Safety"
+        "module_5" -> "🏛️ Government Services"
+        else -> "General"
     }
 }
 
-// Sample data for testing (fallback)
-private val sampleLessons = listOf(
-    Lesson(
-        lessonId = "lesson_smartphone_basics",
-        title = "Getting Started with Your Smartphone",
-        description = "Learn the basics of using your smartphone",
-        content = """
-            Welcome to Your Smartphone!
-            
-            Your smartphone is like a small computer that fits in your pocket. Let's learn the basics:
-            
-            📱 Basic Functions:
-            • **Making Calls**: Tap the phone icon, enter number, tap green call button
-            • **Sending Messages**: Tap messages icon, select contact, type your message  
-            • **Taking Photos**: Open camera app, point at subject, tap shutter button
-            
-            🔋 Battery Tips:
-            • Charge your phone overnight
-            • Dim screen brightness to save battery
-            • Close apps you're not using
-            
-            ⚙️ Basic Settings:
-            • **Volume**: Use side buttons to adjust
-            • **Wi-Fi**: Swipe down from top, tap Wi-Fi icon
-            • **Brightness**: Swipe down from top, adjust slider
-            
-            Practice these steps with your phone in hand!
-        """.trimIndent(),
-        duration = 15,
-        difficulty = DifficultyLevel.BEGINNER,
-        category = LessonCategory.SMARTPHONE_BASICS,
-        order = 1,
-        hasQuiz = true,
-        quizQuestions = listOf(
-            QuizQuestion(
-                questionId = "q1",
-                question = "What is the main purpose of a smartphone?",
-                options = listOf(
-                    "Communication and internet access",
-                    "Only for emergency calls",
-                    "Just for taking photos",
-                    "Only for games"
-                ),
-                correctAnswer = 0,
-                explanation = "Smartphones are versatile devices for communication, internet, photos, and many useful functions."
-            ),
-            QuizQuestion(
-                questionId = "q2",
-                question = "How do you make a phone call?",
-                options = listOf(
-                    "Tap phone icon, enter number, tap call button",
-                    "Shake the phone and say 'call'",
-                    "Press all buttons at once",
-                    "Put phone to ear and wait"
-                ),
-                correctAnswer = 0,
-                explanation = "Use the phone app to dial numbers and make calls safely."
-            )
-        )
-    ),
-    Lesson(
-        lessonId = "lesson_internet_safety",
-        title = "Safe Internet Browsing",
-        description = "Stay safe while browsing the internet",
-        content = """
-            Staying Safe Online
-            
-            The internet is wonderful but requires caution. Here's how to stay safe:
-            
-            🔒 Password Security:
-            • Use strong, unique passwords
-            • Combine letters, numbers, and symbols
-            • Never share passwords with anyone
-            
-            📧 Email Safety:
-            • Don't open emails from strangers
-            • Never click suspicious links  
-            • Look for spelling mistakes in emails
-            
-            🌐 Website Safety:
-            • Look for 🔒 or 'https://' in address bar
-            • Avoid entering personal info on unfamiliar sites
-            • Use reputable websites for shopping
-            
-            Remember: If something seems too good to be true, it probably is!
-        """.trimIndent(),
-        duration = 20,
-        difficulty = DifficultyLevel.BEGINNER,
-        category = LessonCategory.ONLINE_SAFETY,
-        order = 2,
-        hasQuiz = true,
-        quizQuestions = listOf(
-            QuizQuestion(
-                questionId = "q1",
-                question = "What makes a strong password?",
-                options = listOf(
-                    "Mix of letters, numbers, and symbols",
-                    "Your pet's name",
-                    "123456",
-                    "password"
-                ),
-                correctAnswer = 0,
-                explanation = "Strong passwords combine different character types for better security."
-            )
-        )
-    )
-)
+// CHANGED: Removed the old formatCategory function since we're using modules now
 
-private val sampleProgress = listOf(
-    UserProgress(
-        progressId = "1",
-        userId = "user1",
-        lessonId = "lesson_smartphone_basics",
-        completed = false,
-        score = 0,
-        timeSpent = 0
-    )
-)
+// CHANGED: Removed sample lessons data since we're using LocalDataSource

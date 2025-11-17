@@ -3,20 +3,18 @@ package com.example.icsproject2easenetics.data.models
 // Quiz data
 data class Lesson(
     val lessonId: String = "",
+    val moduleId: String = "", // ADD THIS
     val title: String = "",
+    val objective: String = "", // ADD THIS
     val description: String = "",
     val content: String = "",
     val videoUrl: String? = null,
     val duration: Int = 0,
     val difficulty: DifficultyLevel = DifficultyLevel.BEGINNER,
-    val category: LessonCategory = LessonCategory.SMARTPHONE_BASICS,
     val order: Int = 0,
-    // NEW: Quiz integration
-    val quizQuestions: List<QuizQuestion> = emptyList(),
     val hasQuiz: Boolean = false
 ) {
-    constructor() : this("", "", "", "", null, 0, DifficultyLevel.BEGINNER,
-        LessonCategory.SMARTPHONE_BASICS, 0, emptyList(), false)
+    constructor() : this("", "", "", "", "", "", null, 0, DifficultyLevel.BEGINNER, 0, false)
 }
 
 // Quiz data class

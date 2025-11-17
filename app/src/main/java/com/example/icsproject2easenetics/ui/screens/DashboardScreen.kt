@@ -1,8 +1,10 @@
+// DashboardScreen.kt (Updated)
 package com.example.icsproject2easenetics.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
@@ -20,6 +23,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,9 +32,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -47,24 +48,13 @@ fun DashboardScreen(
     onLessonClick: (String) -> Unit,
     onChatbotClick: () -> Unit,
     onProfileClick: () -> Unit,
-    onProgressClick: () -> Unit // NEW
+    onProgressClick: () -> Unit,
+    onModulesClick: () -> Unit // NEW: Added modules navigation
 ) {
-    // TEMPORARY FIX: Comment out ViewModel for now
-    // val userViewModel: UserViewModel = viewModel()
-    // val userProgress by userViewModel.userProgress.collectAsState()
-    // val availableLessons by userViewModel.availableLessons.collectAsState()
-    // val isLoading by userViewModel.isLoading.collectAsState()
-
-    // Use sample data instead
+    // TEMPORARY FIX: Use sample data
     val completedLessons = 3
     val totalLessons = 10
     val averageScore = 85
-
-    // Load user progress and lessons when screen is created
-    // LaunchedEffect(Unit) {
-    //     userViewModel.loadUserProgress("current_user_id")
-    //     userViewModel.loadAvailableLessons()
-    // }
 
     Scaffold(
         topBar = {
@@ -78,7 +68,7 @@ fun DashboardScreen(
                     )
                 },
                 actions = {
-                    // Progress Button - NEW
+                    // Progress Button
                     IconButton(onClick = onProgressClick) {
                         Icon(
                             Icons.Filled.TrendingUp,
@@ -127,7 +117,7 @@ fun DashboardScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Welcome to Easenetics!",
+                            text = "Karibu Easenetics!",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
@@ -151,6 +141,52 @@ fun DashboardScreen(
                 )
             }
 
+            // NEW: Browse Modules Section
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Structured Learning",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "Follow our step-by-step modules designed specifically for Kenyan seniors",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Button(
+                            onClick = onModulesClick,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Filled.CollectionsBookmark,
+                                    contentDescription = "Modules",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text("Browse All Learning Modules")
+                            }
+                        }
+                    }
+                }
+            }
+
             item {
                 Text(
                     text = "Featured Lessons",
@@ -161,11 +197,10 @@ fun DashboardScreen(
 
             // Sample lessons data
             val sampleLessons = listOf(
-                SampleLesson("lesson_smartphone_basics", "Getting Started with Your Smartphone", "Learn the basics of using your smartphone", 15, 0),
-                SampleLesson("lesson_internet_safety", "Safe Internet Browsing", "Stay safe while browsing the internet", 20, 25),
-                SampleLesson("lesson_social_media", "Connecting with Family on Social Media", "Connect with loved ones on social platforms", 25, 50),
-                SampleLesson("lesson_online_safety", "Online Safety Basics", "Protect yourself from online threats", 18, 75),
-                SampleLesson("lesson_video_calls", "Using Video Calls", "Make video calls to family and friends", 22, 100)
+                SampleLesson("lesson_1_1", "Meet Your Smartphone", "Learn the physical parts and basic navigation", 15, 0),
+                SampleLesson("lesson_3_1", "M-Pesa Basics", "Understand and access your digital wallet", 20, 25),
+                SampleLesson("lesson_4_1", "Spotting M-Pesa Scams", "Identify and avoid common fraud attempts", 25, 50),
+                SampleLesson("lesson_5_1", "eCitizen Registration", "Create your government services account", 18, 75)
             )
 
             itemsIndexed(sampleLessons) { index, lesson ->
@@ -174,11 +209,23 @@ fun DashboardScreen(
                     description = lesson.description,
                     duration = "${lesson.duration} min",
                     progress = lesson.progress,
-                    category = index,
+                    category = getCategoryForLesson(lesson.id),
                     onClick = { onLessonClick(lesson.id) }
                 )
             }
         }
+    }
+}
+
+// Helper function to determine category for lesson
+private fun getCategoryForLesson(lessonId: String): Int {
+    return when {
+        lessonId.startsWith("lesson_1") -> 0 // Smartphone
+        lessonId.startsWith("lesson_2") -> 1 // Communication
+        lessonId.startsWith("lesson_3") -> 2 // M-Pesa
+        lessonId.startsWith("lesson_4") -> 3 // Safety
+        lessonId.startsWith("lesson_5") -> 4 // Government
+        else -> 0
     }
 }
 
