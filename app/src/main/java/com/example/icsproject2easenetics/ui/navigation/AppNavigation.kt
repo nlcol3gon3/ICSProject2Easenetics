@@ -27,6 +27,7 @@ import com.example.icsproject2easenetics.ui.screens.AccessibilityScreen
 import com.example.icsproject2easenetics.ui.screens.AuthenticatorSetupScreen
 import com.example.icsproject2easenetics.ui.screens.ChatbotScreen
 import com.example.icsproject2easenetics.ui.screens.DashboardScreen
+import com.example.icsproject2easenetics.ui.screens.DebugScreen
 import com.example.icsproject2easenetics.ui.screens.LessonScreen
 import com.example.icsproject2easenetics.ui.screens.LoginScreen
 import com.example.icsproject2easenetics.ui.screens.MfaVerificationScreen
@@ -58,6 +59,12 @@ fun AppNavigation() {
                         navController.navigate("login")
                     }
                 }
+            )
+        }
+
+        composable("debug") {
+            DebugScreen(
+                onBack = { navController.popBackStack() }
             )
         }
 

@@ -9,8 +9,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,7 +30,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.icsproject2easenetics.ui.components.ModuleCard
@@ -39,14 +43,25 @@ fun ModulesScreen(
     onModuleClick: (String) -> Unit,
     viewModel: ModuleViewModel = viewModel()
 ) {
-    // FIXED: Use collectAsState() instead of .value
     val modules by viewModel.modules.collectAsState()
     val moduleLessons by viewModel.moduleLessons.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
 
     LaunchedEffect(Unit) {
+        println("🔄 ModulesScreen: Loading modules...")
         viewModel.loadAllModules()
+    }
+
+    // Debug information
+    LaunchedEffect(modules, moduleLessons) {
+        println("📊 ModulesScreen State:")
+        println("   Modules count: ${modules.size}")
+        println("   Module lessons keys: ${moduleLessons.keys}")
+        modules.forEach { module ->
+            val lessonCount = moduleLessons[module.moduleId]?.size ?: 0
+            println("   Module ${module.moduleId}: $lessonCount lessons")
+        }
     }
 
     Scaffold(
@@ -56,12 +71,25 @@ fun ModulesScreen(
                     Text(
                         text = "Learning Modules",
                         style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowBack, "Back")
+                    }
+                },
+                actions = {
+                    // Add refresh button
+                    IconButton(
+                        onClick = { viewModel.loadAllModules() },
+                        enabled = !isLoading
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                        } else {
+                            Icon(Icons.Filled.Refresh, "Refresh")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -80,12 +108,17 @@ fun ModulesScreen(
             ) {
                 CircularProgressIndicator()
                 Text(
-                    text = "Loading modules...",
+                    text = "Loading modules and lessons...",
                     modifier = Modifier.padding(16.dp)
+                )
+                // Show debug info while loading
+                Text(
+                    text = "Modules: ${modules.size}, Lessons map: ${moduleLessons.keys.size} keys",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         } else if (errorMessage != null) {
-            // FIXED: Use errorMessage directly since it's nullable
             Column(
                 modifier = Modifier
                     .padding(paddingValues)
@@ -98,11 +131,24 @@ fun ModulesScreen(
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
-                    Text(
-                        text = errorMessage ?: "An error occurred", // FIXED: Handle null case
+                    Column(
                         modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.error
-                    )
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Error Loading Data",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Text(
+                            text = errorMessage ?: "An error occurred",
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            textAlign = TextAlign.Center
+                        )
+                        Button(onClick = { viewModel.loadAllModules() }) {
+                            Text("Try Again")
+                        }
+                    }
                 }
             }
         } else {
@@ -113,6 +159,22 @@ fun ModulesScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // Debug header
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Text(
+                            text = "Debug: ${modules.size} modules, ${moduleLessons.values.sumOf { it.size }} total lessons",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                }
+
                 if (modules.isEmpty()) {
                     item {
                         Card(
@@ -125,25 +187,29 @@ fun ModulesScreen(
                                 Text(
                                     text = "No Modules Available",
                                     style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                                 )
                                 Text(
                                     text = "Check your internet connection or try again later",
                                     modifier = Modifier.padding(16.dp),
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    textAlign = TextAlign.Center
                                 )
+                                Button(onClick = { viewModel.loadAllModules() }) {
+                                    Text("Retry Loading")
+                                }
                             }
                         }
                     }
                 } else {
                     items(modules) { module ->
-                        // FIXED: Access moduleId from the module object
                         val lessonCount = moduleLessons[module.moduleId]?.size ?: 0
+                        println("🎯 Displaying module: ${module.moduleId} with $lessonCount lessons")
+
                         ModuleCard(
                             module = module,
                             lessonCount = lessonCount,
                             onClick = {
-                                // FIXED: Pass the module's ID correctly
+                                println("👉 Module clicked: ${module.moduleId}")
                                 onModuleClick(module.moduleId)
                             }
                         )

@@ -13,10 +13,10 @@ import kotlinx.coroutines.launch
 class ModuleViewModel : ViewModel() {
     private val lessonRepository = LessonRepository()
 
-    private val _modules = MutableStateFlow<List<Module>>(emptyList())
+    private val _modules = MutableStateFlow(emptyList<Module>())
     val modules: StateFlow<List<Module>> = _modules.asStateFlow()
 
-    private val _moduleLessons = MutableStateFlow<Map<String, List<Lesson>>>(emptyMap())
+    private val _moduleLessons = MutableStateFlow(emptyMap<String, List<Lesson>>())
     val moduleLessons: StateFlow<Map<String, List<Lesson>>> = _moduleLessons.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -31,20 +31,50 @@ class ModuleViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                // Fetch modules from Firebase
-                val modules = lessonRepository.getAllModules()
-                _modules.value = modules
+                println("🔄 === MODULE VIEWMODEL DEBUG START ===")
 
-                // Load lessons for each module
+                // 1. Fetch modules from Firebase
+                println("📦 Step 1: Fetching modules from Firebase...")
+                val loadedModules = lessonRepository.getAllModules()
+                println("✅ Modules fetched: ${loadedModules.size}")
+
+                loadedModules.forEach { module ->
+                    println("   - Module: ${module.moduleId} | ${module.title} | Total Lessons: ${module.totalLessons}")
+                }
+
+                _modules.value = loadedModules
+
+                // 2. Load lessons for each module
+                println("📚 Step 2: Loading lessons for each module...")
                 val lessonsMap = mutableMapOf<String, List<Lesson>>()
-                modules.forEach { module ->
+
+                loadedModules.forEach { module ->
+                    println("   🔍 Loading lessons for module: ${module.moduleId}")
                     val lessons = lessonRepository.getLessonsByModule(module.moduleId)
+                    println("   ✅ Found ${lessons.size} lessons for ${module.moduleId}")
+
+                    lessons.forEach { lesson ->
+                        println("     - Lesson: ${lesson.lessonId} | ${lesson.title} | Module: ${lesson.moduleId}")
+                    }
+
                     lessonsMap[module.moduleId] = lessons
                 }
+
                 _moduleLessons.value = lessonsMap
+
+                // 3. Final summary
+                println("📊 === FINAL SUMMARY ===")
+                println("   Total modules: ${loadedModules.size}")
+                println("   Lessons map size: ${lessonsMap.size}")
+                lessonsMap.forEach { (moduleId, lessons) ->
+                    println("   Module $moduleId: ${lessons.size} lessons")
+                }
+                println("🎯 === MODULE VIEWMODEL DEBUG END ===")
 
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to load modules: ${e.message}"
+                println("❌ ERROR in ModuleViewModel: ${e.message}")
+                e.printStackTrace()
             } finally {
                 _isLoading.value = false
             }
@@ -52,6 +82,8 @@ class ModuleViewModel : ViewModel() {
     }
 
     fun getLessonsForModule(moduleId: String): List<Lesson> {
-        return _moduleLessons.value[moduleId] ?: emptyList()
+        return _moduleLessons.value[moduleId] ?: emptyList<Lesson>().also {
+            println("⚠️ No lessons found in ViewModel for module: $moduleId")
+        }
     }
 }

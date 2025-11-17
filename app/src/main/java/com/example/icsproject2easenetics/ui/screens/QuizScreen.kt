@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.icsproject2easenetics.data.models.QuizQuestion
 import com.example.icsproject2easenetics.ui.viewmodels.LessonViewModel
+import com.example.icsproject2easenetics.extensions.cleanMarkdown
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,7 +81,7 @@ fun QuizScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = if (showResults) "Quiz Results" else "Lesson Quiz",
+                        text = if (showResults) "Quiz Results".cleanMarkdown() else "Lesson Quiz".cleanMarkdown(),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -136,18 +137,18 @@ fun QuizScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "No questions available",
+                        text = "No questions available".cleanMarkdown(),
                         style = MaterialTheme.typography.titleLarge,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "This lesson doesn't have any quiz questions yet.",
+                        text = "This lesson doesn't have any quiz questions yet.".cleanMarkdown(),
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(onClick = onBack) {
-                        Text("Return to Lesson")
+                        Text("Return to Lesson".cleanMarkdown())
                     }
                 }
             } else {
@@ -215,12 +216,12 @@ fun QuizInProgress(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Question ${currentQuestionIndex + 1} of $totalQuestions",
+                        text = "Question ${currentQuestionIndex + 1} of $totalQuestions".cleanMarkdown(),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "${(progress * 100).toInt()}%",
+                        text = "${(progress * 100).toInt()}%".cleanMarkdown(),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -242,7 +243,7 @@ fun QuizInProgress(
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    text = currentQuestion.question,
+                    text = currentQuestion.question.cleanMarkdown(),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     lineHeight = MaterialTheme.typography.titleLarge.lineHeight * 1.1
@@ -253,7 +254,7 @@ fun QuizInProgress(
                 // Options
                 currentQuestion.options.forEachIndexed { index, option ->
                     QuizOption(
-                        option = option,
+                        option = option.cleanMarkdown(),
                         index = index,
                         isSelected = userAnswer == index,
                         onClick = { onAnswerSelected(index) },
@@ -280,7 +281,7 @@ fun QuizInProgress(
                     contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             ) {
-                Text(if (canGoBack) "Previous" else "Cancel")
+                Text(if (canGoBack) "Previous".cleanMarkdown() else "Cancel".cleanMarkdown())
             }
 
             Button(
@@ -290,7 +291,7 @@ fun QuizInProgress(
                     containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
-                Text(if (isLastQuestion) "Finish Quiz" else "Next Question")
+                Text(if (isLastQuestion) "Finish Quiz".cleanMarkdown() else "Next Question".cleanMarkdown())
             }
         }
     }
@@ -430,7 +431,7 @@ fun QuizResults(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Quiz Complete!",
+                    text = "Quiz Complete!".cleanMarkdown(),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
@@ -439,7 +440,7 @@ fun QuizResults(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = performance,
+                    text = performance.cleanMarkdown(),
                     style = MaterialTheme.typography.titleLarge,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.primary
@@ -459,7 +460,7 @@ fun QuizResults(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Your Score",
+                            text = "Your Score".cleanMarkdown(),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Medium
                         )
@@ -467,7 +468,7 @@ fun QuizResults(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = "$score/$total",
+                            text = "$score/$total".cleanMarkdown(),
                             style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -476,7 +477,7 @@ fun QuizResults(
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
-                            text = "$percentage%",
+                            text = "$percentage%".cleanMarkdown(),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Medium
                         )
@@ -492,7 +493,7 @@ fun QuizResults(
                         percentage >= 80 -> "Outstanding! You have a great understanding of this material."
                         percentage >= 60 -> "Good work! You understand the main concepts well."
                         else -> "Don't worry! Review the material and try again. Learning takes practice!"
-                    },
+                    }.cleanMarkdown(),
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center
                 )
@@ -506,7 +507,7 @@ fun QuizResults(
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    text = "📋 Question Review",
+                    text = "📋 Question Review".cleanMarkdown(),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -540,7 +541,7 @@ fun QuizResults(
                     containerColor = MaterialTheme.colorScheme.secondary
                 )
             ) {
-                Text("Try Again")
+                Text("Try Again".cleanMarkdown())
             }
 
             Button(
@@ -550,7 +551,7 @@ fun QuizResults(
                     containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
-                Text("Back to Lesson")
+                Text("Back to Lesson".cleanMarkdown())
             }
         }
     }
@@ -592,7 +593,7 @@ fun QuestionReviewItem(
                 Spacer(modifier = Modifier.size(8.dp))
 
                 Text(
-                    text = "Question $questionNumber",
+                    text = "Question $questionNumber".cleanMarkdown(),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = if (isCorrect) MaterialTheme.colorScheme.primary
@@ -604,7 +605,7 @@ fun QuestionReviewItem(
 
             // Question text
             Text(
-                text = question.question,
+                text = question.question.cleanMarkdown(),
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium
             )
@@ -614,14 +615,14 @@ fun QuestionReviewItem(
             // User's answer
             Column {
                 Text(
-                    text = "Your answer:",
+                    text = "Your answer:".cleanMarkdown(),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 val userAnswerText = if (userAnswer != null) {
-                    "${optionLetters[userAnswer]}. ${question.options[userAnswer]}"
+                    "${optionLetters[userAnswer]}. ${question.options[userAnswer].cleanMarkdown()}"
                 } else {
                     "Not answered"
                 }
@@ -640,14 +641,14 @@ fun QuestionReviewItem(
 
                 Column {
                     Text(
-                        text = "Correct answer:",
+                        text = "Correct answer:".cleanMarkdown(),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Text(
-                        text = "${optionLetters[question.correctAnswer]}. ${question.options[question.correctAnswer]}",
+                        text = "${optionLetters[question.correctAnswer]}. ${question.options[question.correctAnswer].cleanMarkdown()}",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -664,7 +665,7 @@ fun QuestionReviewItem(
                     )
                 ) {
                     Text(
-                        text = "💡 ${question.explanation}",
+                        text = "💡 ${question.explanation.cleanMarkdown()}",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(12.dp)
                     )

@@ -50,6 +50,7 @@ import com.example.icsproject2easenetics.data.models.UserProgress
 import com.example.icsproject2easenetics.data.models.DifficultyLevel
 import com.example.icsproject2easenetics.service.VoiceService
 import com.example.icsproject2easenetics.ui.viewmodels.LessonViewModel
+import com.example.icsproject2easenetics.extensions.cleanMarkdown
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,7 +88,7 @@ fun LessonScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = currentLesson?.title ?: "Lesson",
+                        text = currentLesson?.title?.cleanMarkdown() ?: "Lesson",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1
@@ -111,11 +112,11 @@ fun LessonScreen(
                                     isNarrating = false
                                 } else {
                                     val narrationText = """
-                                        ${currentLesson!!.title}
+                                        ${currentLesson!!.title.cleanMarkdown()}
                                         
-                                        ${currentLesson!!.description}
+                                        ${currentLesson!!.description.cleanMarkdown()}
                                         
-                                        ${currentLesson!!.content}
+                                        ${currentLesson!!.content.cleanMarkdown()}
                                     """.trimIndent()
                                     voiceService.speak(narrationText)
                                     isNarrating = true
@@ -284,7 +285,7 @@ fun LessonContent(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "About This Lesson",
+                    text = "About This Lesson".cleanMarkdown(),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -292,7 +293,7 @@ fun LessonContent(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = lesson.description,
+                    text = lesson.description.cleanMarkdown(),
                     style = MaterialTheme.typography.bodyLarge
                 )
 
@@ -316,7 +317,7 @@ fun LessonContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Lesson Content",
+                        text = "Lesson Content".cleanMarkdown(),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -324,7 +325,7 @@ fun LessonContent(
                     // Read content aloud button
                     IconButton(
                         onClick = {
-                            voiceService.speak(lesson.content, "lesson_content")
+                            voiceService.speak(lesson.content.cleanMarkdown(), "lesson_content")
                         }
                     ) {
                         Icon(
@@ -338,7 +339,7 @@ fun LessonContent(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = lesson.content,
+                    text = lesson.content.cleanMarkdown(),
                     style = MaterialTheme.typography.bodyLarge,
                     lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.3
                 )
@@ -356,7 +357,7 @@ fun LessonContent(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "Video Tutorial",
+                            text = "Video Tutorial".cleanMarkdown(),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
@@ -364,7 +365,7 @@ fun LessonContent(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = "Watch a step-by-step video demonstration of this lesson",
+                            text = "Watch a step-by-step video demonstration of this lesson".cleanMarkdown(),
                             style = MaterialTheme.typography.bodyMedium
                         )
 
@@ -392,13 +393,13 @@ fun LessonContent(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "Video Tutorial",
+                                    text = "Video Tutorial".cleanMarkdown(),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "Tap to play",
+                                    text = "Tap to play".cleanMarkdown(),
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
@@ -412,7 +413,7 @@ fun LessonContent(
                         ) {
                             Icon(Icons.Filled.PlayArrow, "Play Video", modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.size(8.dp))
-                            Text("Watch Video Tutorial")
+                            Text("Watch Video Tutorial".cleanMarkdown())
                         }
                     }
                 }
@@ -431,7 +432,7 @@ fun LessonContent(
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = "📝 Ready to Test Your Knowledge?",
+                        text = "📝 Ready to Test Your Knowledge?".cleanMarkdown(),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -439,14 +440,14 @@ fun LessonContent(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "This lesson includes a quiz to reinforce what you've learned.",
+                        text = "This lesson includes a quiz to reinforce what you've learned.".cleanMarkdown(),
                         style = MaterialTheme.typography.bodyMedium
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
-                        text = "💡 Tip: Complete the quiz to earn achievements and track your progress!",
+                        text = "💡 Tip: Complete the quiz to earn achievements and track your progress!".cleanMarkdown(),
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -499,9 +500,9 @@ fun LessonBottomBar(
                     Icon(Icons.Filled.CheckCircle, "Completed", tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.size(8.dp))
                     Column {
-                        Text("Lesson Completed!", fontWeight = FontWeight.Bold)
+                        Text("Lesson Completed!".cleanMarkdown(), fontWeight = FontWeight.Bold)
                         Text(
-                            "Great job! You've mastered this topic.",
+                            "Great job! You've mastered this topic.".cleanMarkdown(),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -520,7 +521,7 @@ fun LessonBottomBar(
                                 containerColor = MaterialTheme.colorScheme.primary
                             )
                         ) {
-                            Text("Take Quiz", style = MaterialTheme.typography.titleMedium)
+                            Text("Take Quiz".cleanMarkdown(), style = MaterialTheme.typography.titleMedium)
                         }
                     }
 
@@ -533,7 +534,7 @@ fun LessonBottomBar(
                         )
                     ) {
                         Text(
-                            if (hasQuiz) "Skip & Mark Complete" else "Mark Complete",
+                            if (hasQuiz) "Skip & Mark Complete".cleanMarkdown() else "Mark Complete".cleanMarkdown(),
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
