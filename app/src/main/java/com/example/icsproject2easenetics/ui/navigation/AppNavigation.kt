@@ -1,6 +1,22 @@
 package com.example.icsproject2easenetics.ui.navigation
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -21,8 +37,8 @@ import com.example.icsproject2easenetics.ui.screens.ProgressScreen
 import com.example.icsproject2easenetics.ui.screens.ProfileScreen
 import com.example.icsproject2easenetics.ui.screens.QuizScreen
 import com.example.icsproject2easenetics.ui.screens.RegisterScreen
-import com.example.icsproject2easenetics.data.models.QuizQuestion
 import com.example.icsproject2easenetics.ui.viewmodels.AuthViewModel
+import com.example.icsproject2easenetics.ui.viewmodels.QuizViewModel
 
 @Composable
 fun AppNavigation() {
@@ -190,7 +206,7 @@ fun AppNavigation() {
             )
         }
 
-        // Modules Screen - NEW
+        // Modules Screen
         composable("modules") {
             ModulesScreen(
                 onBack = {
@@ -202,7 +218,7 @@ fun AppNavigation() {
             )
         }
 
-        // Module Lessons Screen - NEW
+        // Module Lessons Screen
         composable(
             "module_lessons/{moduleId}",
             arguments = listOf(navArgument("moduleId") { type = NavType.StringType })
@@ -230,7 +246,7 @@ fun AppNavigation() {
                 onBack = {
                     navController.popBackStack()
                 },
-                onStartQuiz = { quizLessonId -> // FIXED: Removed the second parameter
+                onStartQuiz = { quizLessonId ->
                     navController.navigate("quiz/$quizLessonId")
                 },
                 onMarkComplete = {
@@ -239,69 +255,64 @@ fun AppNavigation() {
             )
         }
 
-        // Quiz Screen with parameter
+        // Quiz Screen with parameter - FIXED VERSION
         composable(
             "quiz/{lessonId}",
             arguments = listOf(navArgument("lessonId") { type = NavType.StringType })
         ) { backStackEntry ->
             val lessonId = backStackEntry.arguments?.getString("lessonId") ?: ""
 
-            // Sample questions - In real implementation, these will be fetched from Firebase
-            val sampleQuestions = when (lessonId) {
-                "lesson_1_1" -> listOf(
-                    QuizQuestion(
-                        questionId = "q1_1_1",
-                        question = "What is the main function of a smartphone?",
-                        options = listOf(
-                            "Making calls and accessing the internet",
-                            "Only for taking photos",
-                            "Just for playing games",
-                            "Only for sending messages"
-                        ),
-                        correctAnswer = 0,
-                        explanation = "Smartphones are versatile devices that combine calling, internet access, photography, and many other functions."
-                    ),
-                    QuizQuestion(
-                        questionId = "q1_1_2",
-                        question = "How do you wake up your smartphone?",
-                        options = listOf(
-                            "Press the power button",
-                            "Shake the phone",
-                            "Say 'wake up'",
-                            "Plug it into charging"
-                        ),
-                        correctAnswer = 0,
-                        explanation = "The power button is used to wake up the phone from sleep mode."
-                    )
-                )
-                "lesson_3_1" -> listOf(
-                    QuizQuestion(
-                        questionId = "q3_1_1",
-                        question = "What is M-Pesa?",
-                        options = listOf(
-                            "A mobile money service",
-                            "A type of smartphone",
-                            "A social media app",
-                            "A government website"
-                        ),
-                        correctAnswer = 0,
-                        explanation = "M-Pesa is Kenya's popular mobile money service that lets you send, receive, and store money on your phone."
-                    )
-                )
-                else -> emptyList()
+            // Use the QuizViewModel
+            val quizViewModel: QuizViewModel = viewModel()
+
+            // Load questions when screen opens
+            LaunchedEffect(lessonId) {
+                quizViewModel.loadQuizQuestions(lessonId)
             }
 
-            QuizScreen(
-                lessonId = lessonId,
-                questions = sampleQuestions,
-                onQuizComplete = { score, total ->
-                    // In real implementation, save progress to Firebase
-                    navController.popBackStack()
-                },
-                onBack = {
-                    navController.popBackStack()
+            // FIXED: Use collectAsState() to convert StateFlow to Compose State
+            val questions by quizViewModel.questions.collectAsState()
+            val isLoading by quizViewModel.isLoading.collectAsState()
+            val errorMessage by quizViewModel.errorMessage.collectAsState()
+
+            if (isLoading) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
+                    Text("Loading quiz questions...")
                 }
-            )
+            } else if (errorMessage != null) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = errorMessage ?: "Failed to load quiz",
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = { quizViewModel.loadQuizQuestions(lessonId) }) {
+                        Text("Retry")
+                    }
+                }
+            } else {
+                QuizScreen(
+                    lessonId = lessonId,
+                    questions = questions,
+                    onQuizComplete = { score, total ->
+                        // Save progress to Firebase in real implementation
+                        navController.popBackStack()
+                    },
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
         }
     }
 }

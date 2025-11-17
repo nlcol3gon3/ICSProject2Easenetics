@@ -22,6 +22,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -37,11 +39,11 @@ fun ModulesScreen(
     onModuleClick: (String) -> Unit,
     viewModel: ModuleViewModel = viewModel()
 ) {
-    // Access StateFlow values using .value
-    val modules = viewModel.modules.value
-    val moduleLessons = viewModel.moduleLessons.value
-    val isLoading = viewModel.isLoading.value
-    val errorMessage = viewModel.errorMessage.value
+    // FIXED: Use collectAsState() instead of .value
+    val modules by viewModel.modules.collectAsState()
+    val moduleLessons by viewModel.moduleLessons.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.loadAllModules()
@@ -83,6 +85,7 @@ fun ModulesScreen(
                 )
             }
         } else if (errorMessage != null) {
+            // FIXED: Use errorMessage directly since it's nullable
             Column(
                 modifier = Modifier
                     .padding(paddingValues)
@@ -96,7 +99,7 @@ fun ModulesScreen(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = errorMessage,
+                        text = errorMessage ?: "An error occurred", // FIXED: Handle null case
                         modifier = Modifier.padding(16.dp),
                         color = MaterialTheme.colorScheme.error
                     )

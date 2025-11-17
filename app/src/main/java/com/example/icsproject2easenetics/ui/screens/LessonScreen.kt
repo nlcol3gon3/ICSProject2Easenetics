@@ -45,12 +45,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.icsproject2easenetics.data.local.LocalDataSource
 import com.example.icsproject2easenetics.data.models.Lesson
 import com.example.icsproject2easenetics.data.models.UserProgress
 import com.example.icsproject2easenetics.data.models.DifficultyLevel
-import com.example.icsproject2easenetics.data.models.LessonCategory
-import com.example.icsproject2easenetics.data.models.QuizQuestion
 import com.example.icsproject2easenetics.service.VoiceService
 import com.example.icsproject2easenetics.ui.viewmodels.LessonViewModel
 
@@ -59,7 +56,7 @@ import com.example.icsproject2easenetics.ui.viewmodels.LessonViewModel
 fun LessonScreen(
     lessonId: String,
     onBack: () -> Unit,
-    onStartQuiz: (String) -> Unit, // CHANGED: Removed questions parameter
+    onStartQuiz: (String) -> Unit,
     onMarkComplete: () -> Unit
 ) {
     val context = LocalContext.current
@@ -73,6 +70,7 @@ fun LessonScreen(
     // Load lesson data
     val currentLesson by lessonViewModel.currentLesson.collectAsState()
     val userProgress by lessonViewModel.userProgress.collectAsState()
+    val isLoading by lessonViewModel.isLoading.collectAsState()
 
     // Load lesson when screen opens or lessonId changes
     LaunchedEffect(lessonId) {
@@ -150,7 +148,6 @@ fun LessonScreen(
                     },
                     onStartQuiz = {
                         voiceService.stopSpeaking()
-                        // CHANGED: Just pass the lessonId, questions will be loaded in QuizScreen
                         onStartQuiz(currentLesson!!.lessonId)
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -190,12 +187,39 @@ fun LessonScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    CircularProgressIndicator()
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Loading lesson...",
-                        textAlign = TextAlign.Center
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Loading lesson from Firebase...",
+                            textAlign = TextAlign.Center
+                        )
+                    } else {
+                        Text(
+                            text = "Lesson not found",
+                            style = MaterialTheme.typography.titleMedium,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "The lesson might not exist or there might be a connection issue.",
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = { lessonViewModel.loadLesson(lessonId) }) {
+                            Text("Try Again")
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = onBack,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary
+                            )
+                        ) {
+                            Text("Go Back")
+                        }
+                    }
                 }
             } else {
                 LessonContent(
@@ -323,78 +347,79 @@ fun LessonContent(
 
         // Video section (if available)
         lesson.videoUrl?.let { videoUrl ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
+            if (videoUrl.isNotBlank()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Text(
-                        text = "Video Tutorial",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(
-                        text = "Watch a step-by-step video demonstration of this lesson",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Video placeholder with play button
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Video Tutorial",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
                         )
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "Watch a step-by-step video demonstration of this lesson",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Video placeholder with play button
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
                         ) {
-                            Icon(
-                                Icons.Filled.PlayArrow,
-                                contentDescription = "Play Video",
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Video Tutorial",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Tap to play",
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    Icons.Filled.PlayArrow,
+                                    contentDescription = "Play Video",
+                                    modifier = Modifier.size(48.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Video Tutorial",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Tap to play",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    Button(
-                        onClick = { /* Play video */ },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Filled.PlayArrow, "Play Video", modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text("Watch Video Tutorial")
+                        Button(
+                            onClick = { /* Play video */ },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Filled.PlayArrow, "Play Video", modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text("Watch Video Tutorial")
+                        }
                     }
                 }
             }
         }
 
         // Quiz reminder (if lesson has quiz)
-        // CHANGED: Removed the quizQuestions.isEmpty() check
         if (lesson.hasQuiz) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -413,7 +438,6 @@ fun LessonContent(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // CHANGED: Removed specific question count since we'll load from LocalDataSource
                     Text(
                         text = "This lesson includes a quiz to reinforce what you've learned.",
                         style = MaterialTheme.typography.bodyMedium
@@ -436,7 +460,6 @@ fun LessonMetadata(lesson: Lesson) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         MetadataRow("Duration", "${lesson.duration} minutes")
         MetadataRow("Difficulty", formatDifficulty(lesson.difficulty))
-        // CHANGED: Use module information instead of category
         MetadataRow("Module", getModuleName(lesson.moduleId))
     }
 }
@@ -529,7 +552,7 @@ private fun formatDifficulty(difficulty: DifficultyLevel): String {
     }
 }
 
-// NEW: Helper function to get module name from moduleId
+// Helper function to get module name from moduleId
 private fun getModuleName(moduleId: String): String {
     return when (moduleId) {
         "module_1" -> "📱 Smartphone Fundamentals"
@@ -540,7 +563,3 @@ private fun getModuleName(moduleId: String): String {
         else -> "General"
     }
 }
-
-// CHANGED: Removed the old formatCategory function since we're using modules now
-
-// CHANGED: Removed sample lessons data since we're using LocalDataSource

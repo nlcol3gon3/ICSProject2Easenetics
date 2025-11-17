@@ -1,4 +1,3 @@
-// DashboardScreen.kt (Updated)
 package com.example.icsproject2easenetics.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
@@ -93,7 +92,7 @@ fun DashboardScreen(
                 onClick = onChatbotClick,
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Filled.Chat, "AI Assistant")
+                Icon(Icons.Filled.Chat, "Mshauri, Your AI Assistant")
             }
         }
     ) { paddingValues ->
