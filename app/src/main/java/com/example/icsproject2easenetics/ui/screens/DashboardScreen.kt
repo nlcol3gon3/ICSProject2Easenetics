@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.CollectionsBookmark
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.ButtonDefaults
@@ -44,6 +45,7 @@ import com.example.icsproject2easenetics.ui.components.AccessibleButton
 import com.example.icsproject2easenetics.ui.components.LessonCard
 import com.example.icsproject2easenetics.ui.components.ProgressCard
 import com.example.icsproject2easenetics.utils.AccessibilityManager
+import com.example.icsproject2easenetics.utils.extractUserName
 import com.example.icsproject2easenetics.ui.viewmodels.UserViewModel
 import com.example.icsproject2easenetics.ui.viewmodels.AuthViewModel
 import com.example.icsproject2easenetics.ui.viewmodels.ModuleViewModel
@@ -59,6 +61,7 @@ fun DashboardScreen(
     onProfileClick: () -> Unit,
     onProgressClick: () -> Unit,
     onModulesClick: () -> Unit,
+    onWisdomSharingClick: () -> Unit,
     authViewModel: AuthViewModel = viewModel(),
     userViewModel: UserViewModel = viewModel(),
     moduleViewModel: ModuleViewModel = viewModel(),
@@ -79,7 +82,7 @@ fun DashboardScreen(
     val modulesLoading by moduleViewModel.isLoading.collectAsState()
     val modulesError by moduleViewModel.errorMessage.collectAsState()
 
-    // Extract first name from user's email or display name
+    // Extract first name from user's email or display name - USING UTILITY FUNCTION
     val firstName = extractUserName(currentUser)
 
     // Load real data when screen opens
@@ -132,19 +135,31 @@ fun DashboardScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
                 },
+                navigationIcon = {
+                    // Wisdom Sharing Button - MOVED TO LEFT SIDE
+                    IconButton(onClick = onWisdomSharingClick) {
+                        Icon(
+                            Icons.Filled.Lightbulb,
+                            contentDescription = "Wisdom Sharing",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
                 actions = {
                     // Progress Button
                     IconButton(onClick = onProgressClick) {
                         Icon(
                             Icons.Filled.TrendingUp,
-                            contentDescription = "Progress"
+                            contentDescription = "Progress",
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                     // Profile Button
                     IconButton(onClick = onProfileClick) {
                         Icon(
                             Icons.Filled.Person,
-                            contentDescription = "Profile"
+                            contentDescription = "Profile",
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -319,6 +334,53 @@ fun DashboardScreen(
                     }
                 }
 
+                // Community Wisdom Section
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            Text(
+                                text = "Community Wisdom",
+                                style = AccessibilityManager.getScaledTitleLarge(),
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = "Share your experiences and learn from others in our HEKIMA SHARING community",
+                                style = AccessibilityManager.getScaledBodyMedium()
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            AccessibleButton(
+                                onClick = onWisdomSharingClick,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Filled.Lightbulb,
+                                        contentDescription = "Wisdom",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.size(8.dp))
+                                    Text(
+                                        "Join HEKIMA SHARING",
+                                        style = AccessibilityManager.getScaledBodyMedium()
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Browse Modules Section with real module count
                 item {
                     Card(
@@ -452,18 +514,6 @@ fun DashboardScreen(
                 }
             }
         }
-    }
-}
-
-// Helper function to extract user name
-private fun extractUserName(currentUser: com.google.firebase.auth.FirebaseUser?): String {
-    return when {
-        currentUser?.displayName?.isNotEmpty() == true -> currentUser.displayName!!
-        currentUser?.email?.isNotEmpty() == true -> {
-            currentUser.email!!.split("@").first().split(".").first()
-                .replaceFirstChar { it.uppercase() }
-        }
-        else -> ""
     }
 }
 

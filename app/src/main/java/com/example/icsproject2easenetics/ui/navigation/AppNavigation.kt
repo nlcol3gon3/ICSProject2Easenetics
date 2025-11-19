@@ -23,6 +23,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.auth.ktx.auth
+import com.example.icsproject2easenetics.utils.extractUserName
 import com.example.icsproject2easenetics.ui.screens.AccessibilityScreen
 import com.example.icsproject2easenetics.ui.screens.AuthenticatorSetupScreen
 import com.example.icsproject2easenetics.ui.screens.ChatbotScreen
@@ -30,12 +33,15 @@ import com.example.icsproject2easenetics.ui.screens.DashboardScreen
 import com.example.icsproject2easenetics.ui.screens.DebugScreen
 import com.example.icsproject2easenetics.ui.screens.LessonScreen
 import com.example.icsproject2easenetics.ui.screens.LoginScreen
+import com.example.icsproject2easenetics.ui.screens.WisdomSharingScreen
 import com.example.icsproject2easenetics.ui.screens.MfaVerificationScreen
 import com.example.icsproject2easenetics.ui.screens.ModuleLessonsScreen
 import com.example.icsproject2easenetics.ui.screens.ModulesScreen
 import com.example.icsproject2easenetics.ui.screens.OnboardingScreen
 import com.example.icsproject2easenetics.ui.screens.ProgressScreen
 import com.example.icsproject2easenetics.ui.screens.ProfileScreen
+import com.example.icsproject2easenetics.ui.screens.WisdomPostDetailScreen
+import com.example.icsproject2easenetics.ui.screens.CreateWisdomPostScreen
 import com.example.icsproject2easenetics.ui.screens.QuizScreen
 import com.example.icsproject2easenetics.ui.screens.RegisterScreen
 import com.example.icsproject2easenetics.ui.viewmodels.AuthViewModel
@@ -113,6 +119,7 @@ fun AppNavigation() {
             )
         }
 
+
         composable("dashboard") {
             DashboardScreen(
                 onLessonClick = { lessonId ->
@@ -129,6 +136,9 @@ fun AppNavigation() {
                 },
                 onModulesClick = {
                     navController.navigate("modules")
+                },
+                onWisdomSharingClick = {
+                    navController.navigate("wisdom_sharing")
                 }
             )
         }
@@ -210,6 +220,55 @@ fun AppNavigation() {
                 onLessonClick = { lessonId ->
                     navController.navigate("lesson/$lessonId")
                 }
+            )
+        }
+
+        composable("wisdom_sharing") {
+            val authViewModel: AuthViewModel = viewModel()
+            val currentUser by authViewModel.currentUser.collectAsState()
+
+            WisdomSharingScreen(
+                onBack = { navController.popBackStack() },
+                onCreatePost = {
+                    navController.navigate("create_wisdom_post")
+                },
+                onPostClick = { postId ->
+                    navController.navigate("wisdom_post_detail/$postId")
+                },
+                currentUserId = currentUser?.uid ?: "",
+                currentUserName = extractUserName(currentUser) // This function exists in DashboardScreen
+            )
+        }
+
+        composable("create_wisdom_post") {
+            val authViewModel: AuthViewModel = viewModel()
+            val currentUser by authViewModel.currentUser.collectAsState()
+
+            CreateWisdomPostScreen(
+                onBack = { navController.popBackStack() },
+                onPostCreated = {
+                    navController.popBackStack()
+                    // Optionally show a success message or refresh
+                },
+                currentUserId = currentUser?.uid ?: "",
+                currentUserName = extractUserName(currentUser),
+                currentUserEmail = currentUser?.email ?: ""
+            )
+        }
+
+        composable(
+            "wisdom_post_detail/{postId}",
+            arguments = listOf(navArgument("postId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val authViewModel: AuthViewModel = viewModel()
+            val currentUser by authViewModel.currentUser.collectAsState()
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
+
+            WisdomPostDetailScreen(
+                postId = postId,
+                onBack = { navController.popBackStack() },
+                currentUserId = currentUser?.uid ?: "",
+                currentUserName = extractUserName(currentUser)
             )
         }
 

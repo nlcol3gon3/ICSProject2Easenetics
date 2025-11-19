@@ -104,7 +104,7 @@ fun ProgressScreen(
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "🌟 Your Learning Journey",
+                                text = "Your Learning Journey",
                                 style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
                                 fontWeight = FontWeight.Bold
                             )
