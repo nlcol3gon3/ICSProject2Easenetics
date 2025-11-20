@@ -23,9 +23,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.auth.ktx.auth
-import com.example.icsproject2easenetics.utils.extractUserName
+import com.example.icsproject2easenetics.data.utils.extractUserName
 import com.example.icsproject2easenetics.ui.screens.AccessibilityScreen
 import com.example.icsproject2easenetics.ui.screens.AuthenticatorSetupScreen
 import com.example.icsproject2easenetics.ui.screens.ChatbotScreen

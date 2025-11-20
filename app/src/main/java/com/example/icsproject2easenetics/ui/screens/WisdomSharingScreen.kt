@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.icsproject2easenetics.ui.components.WisdomPostCard
 import com.example.icsproject2easenetics.utils.AccessibilityManager
-import com.example.icsproject2easenetics.utils.extractUserName
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

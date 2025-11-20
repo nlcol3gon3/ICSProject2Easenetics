@@ -1,4 +1,4 @@
-package com.example.icsproject2easenetics.utils
+package com.example.icsproject2easenetics.data.utils
 
 import com.google.firebase.auth.FirebaseUser
 

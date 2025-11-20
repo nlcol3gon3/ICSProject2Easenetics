@@ -18,7 +18,6 @@ import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -45,13 +44,11 @@ import com.example.icsproject2easenetics.ui.components.AccessibleButton
 import com.example.icsproject2easenetics.ui.components.LessonCard
 import com.example.icsproject2easenetics.ui.components.ProgressCard
 import com.example.icsproject2easenetics.utils.AccessibilityManager
-import com.example.icsproject2easenetics.utils.extractUserName
+import com.example.icsproject2easenetics.data.utils.extractUserName
 import com.example.icsproject2easenetics.ui.viewmodels.UserViewModel
 import com.example.icsproject2easenetics.ui.viewmodels.AuthViewModel
 import com.example.icsproject2easenetics.ui.viewmodels.ModuleViewModel
 import com.example.icsproject2easenetics.ui.viewmodels.LessonViewModel
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
