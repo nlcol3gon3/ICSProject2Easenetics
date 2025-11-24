@@ -1,6 +1,8 @@
 package com.example.icsproject2easenetics.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,12 +18,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.VideogameAsset
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -34,6 +40,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +68,7 @@ fun DashboardScreen(
     onProgressClick: () -> Unit,
     onModulesClick: () -> Unit,
     onWisdomSharingClick: () -> Unit,
+    onGamesClick: () -> Unit,
     authViewModel: AuthViewModel = viewModel(),
     userViewModel: UserViewModel = viewModel(),
     moduleViewModel: ModuleViewModel = viewModel(),
@@ -81,6 +91,9 @@ fun DashboardScreen(
 
     // Extract first name from user's email or display name - USING UTILITY FUNCTION
     val firstName = extractUserName(currentUser)
+
+    // Menu state
+    var menuExpanded by remember { mutableStateOf(false) }
 
     // Load real data when screen opens
     LaunchedEffect(currentUser) {
@@ -133,25 +146,115 @@ fun DashboardScreen(
                     )
                 },
                 navigationIcon = {
-                    // Wisdom Sharing Button - MOVED TO LEFT SIDE
-                    IconButton(onClick = onWisdomSharingClick) {
-                        Icon(
-                            Icons.Filled.Lightbulb,
-                            contentDescription = "Wisdom Sharing",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                    // Menu Button with dropdown
+                    Box {
+                        IconButton(
+                            onClick = { menuExpanded = true }
+                        ) {
+                            Icon(
+                                Icons.Filled.Menu,
+                                contentDescription = "Menu",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        // Dropdown Menu
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false }
+                        ) {
+                            // Track My Progress
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.TrendingUp,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.size(12.dp))
+                                        Text("Track My Progress")
+                                    }
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    onProgressClick()
+                                }
+                            )
+
+                            // Hekima Sharing
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Lightbulb,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.size(12.dp))
+                                        Text("Hekima Sharing")
+                                    }
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    onWisdomSharingClick()
+                                }
+                            )
+
+                            // Mshauri AI Assistant
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Chat,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.size(12.dp))
+                                        Text("Mshauri AI Assistant")
+                                    }
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    onChatbotClick()
+                                }
+                            )
+
+                            // Games
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.VideogameAsset,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.size(12.dp))
+                                        Text("Brain Games")
+                                    }
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    onGamesClick()
+                                }
+                            )
+                        }
                     }
                 },
                 actions = {
-                    // Progress Button
-                    IconButton(onClick = onProgressClick) {
-                        Icon(
-                            Icons.Filled.TrendingUp,
-                            contentDescription = "Progress",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    // Profile Button
+                    // Profile Button only remains in top bar
                     IconButton(onClick = onProfileClick) {
                         Icon(
                             Icons.Filled.Person,
@@ -166,12 +269,7 @@ fun DashboardScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onChatbotClick,
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(Icons.Filled.Chat, "Mshauri, Your AI Assistant")
-            }
+            // Removed the chatbot FAB since it's now in the menu
         }
     ) { paddingValues ->
         if (isLoading) {
@@ -331,50 +429,58 @@ fun DashboardScreen(
                     }
                 }
 
-                // Community Wisdom Section
+                // Quick Access Cards Section
                 item {
-                    Card(
+                    Text(
+                        text = "Quick Access",
+                        style = AccessibilityManager.getScaledTitleLarge(),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                item {
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                text = "Community Wisdom",
-                                style = AccessibilityManager.getScaledTitleLarge(),
-                                fontWeight = FontWeight.Bold
-                            )
+                        // Progress Tracking Card
+                        QuickAccessCard(
+                            title = "Track Progress",
+                            icon = Icons.Filled.TrendingUp,
+                            onClick = onProgressClick,
+                            modifier = Modifier.weight(1f)
+                        )
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                        // Hekima Sharing Card
+                        QuickAccessCard(
+                            title = "Hekima",
+                            icon = Icons.Filled.Lightbulb,
+                            onClick = onWisdomSharingClick,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
 
-                            Text(
-                                text = "Share your experiences and learn from others in our HEKIMA SHARING community",
-                                style = AccessibilityManager.getScaledBodyMedium()
-                            )
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Mshauri AI Card
+                        QuickAccessCard(
+                            title = "Mshauri AI",
+                            icon = Icons.Filled.Chat,
+                            onClick = onChatbotClick,
+                            modifier = Modifier.weight(1f)
+                        )
 
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            AccessibleButton(
-                                onClick = onWisdomSharingClick,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Filled.Lightbulb,
-                                        contentDescription = "Wisdom",
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.size(8.dp))
-                                    Text(
-                                        "Join HEKIMA SHARING",
-                                        style = AccessibilityManager.getScaledBodyMedium()
-                                    )
-                                }
-                            }
-                        }
+                        // Games Card
+                        QuickAccessCard(
+                            title = "Games",
+                            icon = Icons.Filled.VideogameAsset,
+                            onClick = onGamesClick,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
 
@@ -510,6 +616,47 @@ fun DashboardScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+// Quick Access Card Component
+@Composable
+fun QuickAccessCard(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .height(100.dp)
+            .clickable { onClick() },
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = title,
+                style = AccessibilityManager.getScaledBodySmall(),
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }

@@ -23,12 +23,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.icsproject2easenetics.data.models.Game
 import com.example.icsproject2easenetics.service.ChatPreferences
 import com.example.icsproject2easenetics.ui.screens.*
 import com.example.icsproject2easenetics.ui.viewmodels.AuthViewModel
 import com.example.icsproject2easenetics.ui.viewmodels.ChatbotViewModel
 import com.example.icsproject2easenetics.ui.viewmodels.ChatbotViewModelFactory
 import com.example.icsproject2easenetics.ui.viewmodels.QuizViewModel
+import com.example.icsproject2easenetics.ui.screens.ShapeSequenceGameScreen
+import com.example.icsproject2easenetics.ui.viewmodels.ShapeSequenceViewModel
 
 @Composable
 fun AppNavigation(context: Context) {
@@ -78,7 +81,8 @@ fun AppNavigation(context: Context) {
                 onProfileClick = { navController.navigate("profile") },
                 onProgressClick = { navController.navigate("progress") },
                 onModulesClick = { navController.navigate("modules") },
-                onWisdomSharingClick = { navController.navigate("wisdom_sharing") }
+                onWisdomSharingClick = { navController.navigate("wisdom_sharing") },
+                onGamesClick = { navController.navigate("games") }
             )
         }
 
@@ -155,6 +159,25 @@ fun AppNavigation(context: Context) {
             )
         }
 
+// In the games composable, add explicit type
+        composable("games") {
+            GamesScreen(
+                onBack = { navController.popBackStack() },
+                onGameSelected = { game: Game ->
+                    when (game.id) {
+                        "shape_sequence" -> navController.navigate("shape_sequence_game")
+                        // Add other games when implemented
+                        else -> { /* Handle other games */ }
+                    }
+                }
+            )
+        }
+
+        composable("shape_sequence_game") {
+            ShapeSequenceGameScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
         // Quiz Screen
         composable(
             "quiz/{lessonId}",
