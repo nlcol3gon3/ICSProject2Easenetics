@@ -1,369 +1,312 @@
 package com.example.icsproject2easenetics.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.SmartToy
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.icsproject2easenetics.ui.components.AccessibleButton
-import com.example.icsproject2easenetics.utils.AccessibilityManager
-import com.example.icsproject2easenetics.service.SpeechRecognitionService
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import com.example.icsproject2easenetics.service.SuggestedLesson
 import com.example.icsproject2easenetics.ui.viewmodels.ChatbotViewModel
+import com.example.icsproject2easenetics.utils.FormattedTextComposer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatbotScreen(
     onBack: () -> Unit,
     onLessonClick: (String) -> Unit,
-    viewModel: ChatbotViewModel = viewModel()
+    viewModel: ChatbotViewModel
 ) {
     val context = LocalContext.current
-    val speechService = remember { SpeechRecognitionService(context) }
-
-    val chatMessages by viewModel.chatMessages.collectAsState()
+    val chatHistory by viewModel.chatHistory.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val suggestedLessons by viewModel.suggestedLessons.collectAsState()
-    val quickQuestions by viewModel.quickQuestions.collectAsState()
+    var userInput by remember { mutableStateOf(TextFieldValue()) }
+    val scrollState = rememberLazyListState()
 
-    var userInput by remember { mutableStateOf("") }
-    val isListening by speechService.isListeningState.collectAsState()
-    val recognitionResult by speechService.recognitionResult.collectAsState()
-    val recognitionError by speechService.recognitionError.collectAsState()
-
-    val lazyListState = rememberLazyListState()
-
-    // Auto-fill user input with speech recognition result
-    LaunchedEffect(recognitionResult) {
-        recognitionResult?.let { result ->
-            userInput = result
-            speechService.clearResult()
-        }
-    }
+    // Dropdown menu state
+    var showMenu by remember { mutableStateOf(false) }
 
     // Auto-scroll to bottom when new messages arrive
-    LaunchedEffect(chatMessages.size) {
-        if (chatMessages.isNotEmpty()) {
-            lazyListState.animateScrollToItem(chatMessages.size - 1)
+    LaunchedEffect(chatHistory.size) {
+        if (chatHistory.isNotEmpty()) {
+            scrollState.animateScrollToItem(chatHistory.size - 1)
         }
     }
 
-    // Clean up speech service when leaving screen
+    // Load chat history when screen starts
     LaunchedEffect(Unit) {
-        speechService.cancelListening()
+        viewModel.loadChatHistory()
     }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text(
-                        text = "AI Learning Assistant, Mshauri",
-                        style = AccessibilityManager.getScaledTitleLarge(), // CHANGED
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.SmartToy,
+                            contentDescription = "Mshauri AI",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Mshauri AI",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        speechService.cancelListening()
-                        onBack()
-                    }) {
-                        Icon(Icons.Filled.ArrowBack, "Back")
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        speechService.cancelListening()
-                        viewModel.clearChat()
-                    }) {
-                        Icon(Icons.Filled.Clear, "Clear Chat")
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-        ) {
-            // Show recognition error if any
-            if (!recognitionError.isNullOrEmpty()) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                ) {
-                    Text(
-                        text = recognitionError!!,
-                        modifier = Modifier.padding(12.dp),
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            // Chat messages
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 16.dp),
-                state = lazyListState,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(chatMessages) { message ->
-                    ChatMessageBubble(message = message)
-                }
-
-                // Loading indicator for AI response
-                if (isLoading) {
-                    item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            horizontalArrangement = Arrangement.Start
-                        ) {
-                            Card(
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                ),
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(16.dp),
-                                        strokeWidth = 2.dp
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Mshauri is thinking...")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Voice listening indicator - NEW
-            if (isListening) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "Listening... Speak now",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            // Suggested Lessons (if any)
-            if (suggestedLessons.isNotEmpty()) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = "📚 Suggested Lessons:",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            suggestedLessons.forEach { lesson ->
-                                SuggestedLessonItem(
-                                    lesson = lesson,
-                                    onClick = { onLessonClick(lesson.lessonId) }
-                                )
-                            }
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            // Quick Questions (if any)
-            if (quickQuestions.isNotEmpty()) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = "💡 Quick Questions:",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            quickQuestions.forEach { question ->
-                                QuickQuestionButton(
-                                    question = question,
-                                    onClick = {
-                                        userInput = question
-                                        viewModel.sendMessage(question)
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            // Input area
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    // Input field with voice button
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedTextField(
-                            value = userInput,
-                            onValueChange = { userInput = it },
-                            placeholder = { Text("Ask about digital skills...") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
-                        )
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        // Voice input button - NOW FUNCTIONAL
+                    // Dropdown menu icon
+                    Box {
                         IconButton(
-                            onClick = {
-                                if (isListening) {
-                                    speechService.stopListening()
-                                } else {
-                                    speechService.clearResult()
-                                    speechService.startListening()
-                                }
-                            },
-                            enabled = speechService.isAvailable()
+                            onClick = { showMenu = true }
                         ) {
                             Icon(
-                                if (isListening) Icons.Filled.MicOff else Icons.Filled.Mic,
-                                contentDescription = if (isListening) "Stop Listening" else "Voice Input",
-                                tint = if (isListening) MaterialTheme.colorScheme.error
-                                else MaterialTheme.colorScheme.primary
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = "More options"
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        IconButton(
-                            onClick = {
-                                if (userInput.isNotBlank()) {
-                                    viewModel.sendMessage(userInput)
-                                    userInput = ""
-                                    speechService.cancelListening()
-                                }
-                            },
-                            enabled = userInput.isNotBlank() && !isLoading
+                        // Dropdown menu
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
                         ) {
-                            Icon(Icons.Filled.Send, "Send")
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Delete,
+                                            contentDescription = "Clear chat",
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Clear Chat History")
+                                    }
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.clearChatHistory()
+                                },
+                                leadingIcon = {
+                                    // Icon is already in the text for better alignment
+                                }
+                            )
                         }
                     }
-
-                    // Voice input hint - NEW
-                    if (speechService.isAvailable()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "💡 Tap the microphone to use voice input",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // Chat messages area
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                if (chatHistory.isEmpty()) {
+                    // Welcome message when no chat history
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.SmartToy,
+                            contentDescription = "Mshauri AI",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(80.dp)
                         )
-                    } else {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
                         Text(
-                            text = "⚠️ Voice input not available on this device",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
+                            text = "Hello! I'm Mshauri",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Your Virtual Learning Assistant",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Features list
+                        Column(
+                            modifier = Modifier.padding(horizontal = 32.dp),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            WelcomeFeature("💡 Get instant answers to your questions")
+                            WelcomeFeature("📚 Receive personalized learning suggestions")
+                            WelcomeFeature("🎯 Clear explanations of complex topics")
+                            WelcomeFeature("🚀 24/7 learning support")
+                        }
+
+                        Spacer(modifier = Modifier.height(32.dp))
+                        Text(
+                            text = "How can I help you learn today?",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        state = scrollState
+                    ) {
+                        items(chatHistory) { message ->
+                            ChatMessageItem(message)
+                        }
+
+                        // Show "Mshauri is thinking..." when loading
+                        if (isLoading) {
+                            item {
+                                ThinkingIndicator()
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Input area
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Message input field
+                    BasicTextField(
+                        value = userInput,
+                        onValueChange = { userInput = it },
+                        modifier = Modifier
+                            .weight(1f)
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.outline,
+                                shape = RoundedCornerShape(24.dp)
+                            )
+                            .background(
+                                color = MaterialTheme.colorScheme.surface,
+                                shape = RoundedCornerShape(24.dp)
+                            )
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                        decorationBox = { innerTextField ->
+                            Box(
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (userInput.text.isEmpty()) {
+                                    Text(
+                                        text = "Ask Mshauri anything...",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        },
+                        singleLine = false,
+                        maxLines = 3
+                    )
+
+                    // Send button
+                    IconButton(
+                        onClick = {
+                            if (userInput.text.isNotBlank() && !isLoading) {
+                                viewModel.sendMessage(userInput.text)
+                                userInput = TextFieldValue()
+                            }
+                        },
+                        enabled = userInput.text.isNotBlank() && !isLoading,
+                        modifier = Modifier
+                            .size(56.dp)
+                            .background(
+                                color = if (userInput.text.isNotBlank() && !isLoading) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                                },
+                                shape = CircleShape
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Send,
+                            contentDescription = "Send message",
+                            tint = if (userInput.text.isNotBlank() && !isLoading) {
+                                MaterialTheme.colorScheme.onPrimary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            },
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
@@ -373,82 +316,198 @@ fun ChatbotScreen(
 }
 
 @Composable
-fun ChatMessageBubble(message: com.example.icsproject2easenetics.ui.viewmodels.ChatMessage) {
+fun WelcomeFeature(text: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+fun ChatMessageItem(message: String) {
+    val isUser = message.startsWith("You:")
+    val messageContent = if (isUser) message.removePrefix("You: ") else message.removePrefix("AI: ")
+
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (message.isUser) Arrangement.End else Arrangement.Start
+        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
     ) {
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = if (message.isUser) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                }
-            ),
+        Box(
             modifier = Modifier
-                .padding(8.dp)
+                .widthIn(max = 280.dp)
                 .clip(
                     RoundedCornerShape(
                         topStart = 16.dp,
                         topEnd = 16.dp,
-                        bottomStart = if (message.isUser) 16.dp else 4.dp,
-                        bottomEnd = if (message.isUser) 4.dp else 16.dp
+                        bottomStart = if (isUser) 16.dp else 4.dp,
+                        bottomEnd = if (isUser) 4.dp else 16.dp
                     )
                 )
+                .background(
+                    color = if (isUser) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    }
+                )
+                .padding(16.dp)
         ) {
-            Text(
-                text = message.content,
-                style = AccessibilityManager.getScaledBodyMedium(), // CHANGED
-                modifier = Modifier.padding(12.dp),
-                color = if (message.isUser) {
-                    MaterialTheme.colorScheme.onPrimary
+            Column {
+                // Sender label
+                Text(
+                    text = if (isUser) "You" else "Mshauri",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isUser) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Message content with formatting
+                if (isUser) {
+                    Text(
+                        text = messageContent,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 } else {
-                    MaterialTheme.colorScheme.onSurface
+                    FormattedTextComposer(text = messageContent)
                 }
-            )
+            }
         }
     }
 }
 
 @Composable
-fun QuickQuestionButton(
-    question: String,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth()
+fun ThinkingIndicator() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Start
     ) {
-        Text(
-            text = question,
-            style = MaterialTheme.typography.bodySmall
-        )
+        Box(
+            modifier = Modifier
+                .widthIn(max = 200.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Animated dots
+                val infiniteTransition = rememberInfiniteTransition()
+                val alpha1 by infiniteTransition.animateFloat(
+                    initialValue = 0.3f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(
+                        animation = keyframes {
+                            durationMillis = 1400
+                            0.0f at 0 with LinearEasing
+                            1.0f at 400 with LinearEasing
+                            0.3f at 800 with LinearEasing
+                        },
+                        repeatMode = RepeatMode.Restart
+                    )
+                )
+                val alpha2 by infiniteTransition.animateFloat(
+                    initialValue = 0.3f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(
+                        animation = keyframes {
+                            durationMillis = 1400
+                            0.3f at 0 with LinearEasing
+                            1.0f at 600 with LinearEasing
+                            0.3f at 1000 with LinearEasing
+                        },
+                        repeatMode = RepeatMode.Restart
+                    )
+                )
+                val alpha3 by infiniteTransition.animateFloat(
+                    initialValue = 0.3f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(
+                        animation = keyframes {
+                            durationMillis = 1400
+                            0.3f at 0 with LinearEasing
+                            1.0f at 800 with LinearEasing
+                            0.3f at 1200 with LinearEasing
+                        },
+                        repeatMode = RepeatMode.Restart
+                    )
+                )
+
+                Text(
+                    text = "Mshauri is thinking",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = ".",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha1),
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = ".",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha2),
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = ".",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha3),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+// Quick questions composable (you can add this later)
 @Composable
-fun SuggestedLessonItem(
-    lesson: SuggestedLesson,
-    onClick: () -> Unit
+fun QuickQuestionsSection(
+    questions: List<String>,
+    onQuestionClick: (String) -> Unit
 ) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Text(
+            text = "Quick Questions",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        questions.forEach { question ->
             Text(
-                text = lesson.title,
+                text = question,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = lesson.description,
-                style = MaterialTheme.typography.bodySmall
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onQuestionClick(question) }
+                    .padding(vertical = 8.dp)
             )
         }
     }

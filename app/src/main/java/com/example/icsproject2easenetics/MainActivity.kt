@@ -6,11 +6,13 @@ import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import android.content.Context
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.icsproject2easenetics.ui.navigation.AppNavigation
 import com.example.icsproject2easenetics.ui.theme.EaseneticsTheme
@@ -23,7 +25,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             EaseneticsTheme {
-                Surface {
+                Surface(color = MaterialTheme.colorScheme.background) {
                     EaseneticsApp()
                 }
             }
@@ -33,19 +35,20 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun EaseneticsApp() {
+    val context = LocalContext.current // Add this
     val accessibilityViewModel: AccessibilityViewModel = viewModel()
     val accessibilitySettings by accessibilityViewModel.accessibilitySettings.collectAsState()
 
-    // Update global accessibility manager when settings change
     LaunchedEffect(accessibilitySettings) {
         AccessibilityManager.updateSettings(accessibilitySettings)
     }
 
-    // Provide accessibility settings to the entire app
-    androidx.compose.runtime.CompositionLocalProvider(
+    CompositionLocalProvider(
         LocalAccessibilitySettings provides accessibilitySettings
     ) {
-        AppNavigation()
+        AppNavigation(
+            context = context // Use the actual context
+        )
     }
 }
 
