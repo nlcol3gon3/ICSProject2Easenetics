@@ -1,4 +1,3 @@
-// ui/viewmodels/ProgressViewModel.kt
 package com.example.icsproject2easenetics.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
@@ -6,17 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.icsproject2easenetics.data.models.Achievement
 import com.example.icsproject2easenetics.data.models.LearningStats
 import com.example.icsproject2easenetics.data.models.WeeklyProgress
-import com.example.icsproject2easenetics.data.repositories.ProgressRepository
 import com.example.icsproject2easenetics.service.ProgressService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.Date
 
 class ProgressViewModel : ViewModel() {
     private val progressService = ProgressService()
-    private val progressRepository = ProgressRepository()
 
     private val _learningStats = MutableStateFlow<LearningStats?>(null)
     val learningStats: StateFlow<LearningStats?> = _learningStats.asStateFlow()
@@ -34,37 +30,26 @@ class ProgressViewModel : ViewModel() {
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                // Load REAL progress data from Firebase
-                val userProgress = progressRepository.getUserProgress(userId)
-
-                // Calculate real statistics from actual user data
-                val completedLessons = userProgress.count { it.completed }
-                val quizzesTaken = userProgress.count { it.score > 0 }
-                val totalQuizScore = userProgress.sumOf { it.score }
-                val totalQuestions = if (quizzesTaken > 0) quizzesTaken * 10 else 1 // Estimate 10 questions per quiz
-                val totalLearningTime = userProgress.sumOf { it.timeSpent }
-                val lastActivity = userProgress.maxByOrNull { it.lastAccessed }?.lastAccessed?.let { Date(it) } ?: Date()
-
-                // Calculate REAL learning stats
-                val realStats = progressService.calculateLearningStats(
-                    completedLessons = completedLessons,
-                    quizzesTaken = quizzesTaken,
-                    totalQuizScore = totalQuizScore,
-                    totalQuestions = totalQuestions,
-                    learningTime = totalLearningTime,
-                    lastActivity = lastActivity
-                )
+                // Load REAL data from ProgressService
+                val realStats = progressService.calculateLearningStats(userId)
+                val userAchievements = progressService.getAchievements(userId)
+                val weeklyProgressData = progressService.getWeeklyProgress(userId)
 
                 _learningStats.value = realStats
-                _achievements.value = progressService.getAchievements(realStats)
-                _weeklyProgress.value = progressService.getWeeklyProgress()
+                _achievements.value = userAchievements
+                _weeklyProgress.value = weeklyProgressData
 
             } catch (e: Exception) {
-                // Handle error - data will remain as null/empty
+                // Handle error - you might want to set error state
+                e.printStackTrace()
             } finally {
                 _isLoading.value = false
             }
         }
+    }
+
+    fun refreshProgressData(userId: String) {
+        loadProgressData(userId)
     }
 
     fun getMotivationalMessage(): String {

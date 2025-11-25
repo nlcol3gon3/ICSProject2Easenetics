@@ -31,18 +31,29 @@ class UserViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    // Track current user ID
+    private var currentUserId: String? = null
+
+    fun setCurrentUser(userId: String) {
+        currentUserId = userId
+    }
+
     fun loadUserProgress(userId: String) {
         _isLoading.value = true
         _errorMessage.value = null
+        currentUserId = userId
 
         viewModelScope.launch {
             try {
                 // Load real progress from Firebase
                 val progress = progressRepository.getUserProgress(userId)
                 _userProgress.value = progress
+                println("✅ UserViewModel: Loaded ${progress.size} progress records for user $userId")
 
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to load progress: ${e.message}"
+                println("❌ UserViewModel: Error loading progress: ${e.message}")
+                e.printStackTrace()
             } finally {
                 _isLoading.value = false
             }
@@ -66,9 +77,11 @@ class UserViewModel : ViewModel() {
                 }
 
                 _availableLessons.value = allLessons
+                println("✅ UserViewModel: Loaded ${allLessons.size} available lessons")
 
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to load lessons: ${e.message}"
+                println("❌ UserViewModel: Error loading lessons: ${e.message}")
                 _availableLessons.value = emptyList()
             } finally {
                 _isLoading.value = false
@@ -76,30 +89,26 @@ class UserViewModel : ViewModel() {
         }
     }
 
-    fun updateLessonProgress(progress: UserProgress) {
+    fun updateQuizScore(userId: String, lessonId: String, score: Int) {
         viewModelScope.launch {
             try {
-                // Save to Firebase
-                val result = progressRepository.saveUserProgress(progress)
+                println("🔄 UserViewModel: Updating quiz score - User: $userId, Lesson: $lessonId, Score: $score")
+
+                val result = progressRepository.updateQuizScore(userId, lessonId, score)
 
                 if (result.isSuccess) {
-                    // Update local state
-                    val currentProgress = _userProgress.value.toMutableList()
-                    val existingIndex = currentProgress.indexOfFirst { it.lessonId == progress.lessonId }
-
-                    if (existingIndex >= 0) {
-                        currentProgress[existingIndex] = progress
-                    } else {
-                        currentProgress.add(progress)
-                    }
-
-                    _userProgress.value = currentProgress
+                    println("✅ UserViewModel: Quiz score updated successfully")
+                    // Reload progress to get the updated data
+                    loadUserProgress(userId)
                 } else {
-                    _errorMessage.value = "Failed to save progress to database"
+                    _errorMessage.value = "Failed to update quiz score"
+                    println("❌ UserViewModel: Failed to update quiz score")
                 }
 
             } catch (e: Exception) {
-                _errorMessage.value = "Failed to update progress: ${e.message}"
+                _errorMessage.value = "Failed to update quiz score: ${e.message}"
+                println("❌ UserViewModel: Error updating quiz score: ${e.message}")
+                e.printStackTrace()
             }
         }
     }
@@ -107,35 +116,23 @@ class UserViewModel : ViewModel() {
     fun markLessonComplete(userId: String, lessonId: String, score: Int = 0, timeSpent: Int = 0) {
         viewModelScope.launch {
             try {
+                println("🔄 UserViewModel: Marking lesson complete - User: $userId, Lesson: $lessonId")
+
                 val result = progressRepository.markLessonComplete(userId, lessonId, score, timeSpent)
 
                 if (result.isSuccess) {
+                    println("✅ UserViewModel: Lesson marked as complete")
                     // Reload progress to get the updated data
                     loadUserProgress(userId)
                 } else {
                     _errorMessage.value = "Failed to mark lesson as complete"
+                    println("❌ UserViewModel: Failed to mark lesson as complete")
                 }
 
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to mark lesson complete: ${e.message}"
-            }
-        }
-    }
-
-    fun updateQuizScore(userId: String, lessonId: String, score: Int) {
-        viewModelScope.launch {
-            try {
-                val result = progressRepository.updateQuizScore(userId, lessonId, score)
-
-                if (result.isSuccess) {
-                    // Reload progress to get the updated data
-                    loadUserProgress(userId)
-                } else {
-                    _errorMessage.value = "Failed to update quiz score"
-                }
-
-            } catch (e: Exception) {
-                _errorMessage.value = "Failed to update quiz score: ${e.message}"
+                println("❌ UserViewModel: Error marking lesson complete: ${e.message}")
+                e.printStackTrace()
             }
         }
     }
@@ -159,5 +156,13 @@ class UserViewModel : ViewModel() {
 
     fun getTotalLearningTime(): Int {
         return _userProgress.value.sumOf { it.timeSpent }
+    }
+
+    // Refresh all data
+    fun refreshAllData() {
+        currentUserId?.let { userId ->
+            loadUserProgress(userId)
+            loadAvailableLessons()
+        }
     }
 }

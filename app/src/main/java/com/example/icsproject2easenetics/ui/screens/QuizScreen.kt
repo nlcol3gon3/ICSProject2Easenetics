@@ -1,9 +1,8 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.example.icsproject2easenetics.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,15 +15,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,7 +34,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,31 +45,75 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.icsproject2easenetics.data.models.QuizQuestion
-import com.example.icsproject2easenetics.extensions.cleanMarkdown
-
+import com.example.icsproject2easenetics.ui.components.AccessibleButton
+import com.example.icsproject2easenetics.utils.AccessibilityManager
+import com.example.icsproject2easenetics.ui.viewmodels.AuthViewModel
+import com.example.icsproject2easenetics.ui.viewmodels.UserViewModel
+import com.example.icsproject2easenetics.ui.viewmodels.LessonViewModel
+import com.example.icsproject2easenetics.ui.viewmodels.ProgressViewModel
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizScreen(
     lessonId: String,
     questions: List<QuizQuestion>,
-    onQuizComplete: (score: Int, total: Int) -> Unit,
-    onBack: () -> Unit
+    onQuizComplete: (Int, Int) -> Unit,
+    onBack: () -> Unit,
+    authViewModel: AuthViewModel = viewModel(),
+    userViewModel: UserViewModel = viewModel(),
+    lessonViewModel: LessonViewModel = viewModel(),
+    progressViewModel: ProgressViewModel = viewModel()
 ) {
-    var currentQuestionIndex by remember { mutableStateOf(0) }
-    var userAnswers by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    val currentUser by authViewModel.currentUser.collectAsState()
+
+    var currentQuestionIndex by remember { mutableIntStateOf(0) }
+    var selectedAnswer by remember { mutableIntStateOf(-1) }
+    var userAnswers by remember { mutableStateOf<List<Int>>(emptyList()) }
     var showResults by remember { mutableStateOf(false) }
-    var quizSubmitted by remember { mutableStateOf(false) }
+    var score by remember { mutableIntStateOf(0) }
+    var isSavingProgress by remember { mutableStateOf(false) }
 
     val currentQuestion = questions.getOrNull(currentQuestionIndex)
-    val userAnswer = userAnswers[currentQuestion?.questionId]
 
-    // Calculate progress
-    val progress = if (questions.isNotEmpty()) {
-        (currentQuestionIndex + 1).toFloat() / questions.size
-    } else {
-        0f
+// In your QuizScreen.kt, update the LaunchedEffect:
+    LaunchedEffect(showResults) {
+        if (showResults && score > 0 && currentUser != null && !isSavingProgress) {
+            isSavingProgress = true
+
+            // Calculate final score
+            val finalScore = (score.toDouble() / questions.size * 100).toInt()
+            println("🎯 QuizScreen: Quiz completed! Score: $score/${questions.size} ($finalScore%)")
+
+            try {
+                // Update progress in Firebase through UserViewModel
+                currentUser?.uid?.let { userId ->
+                    println("🔄 QuizScreen: Saving progress for user $userId, lesson $lessonId")
+
+                    // Use a coroutine scope that won't be cancelled
+                    userViewModel.updateQuizScore(userId, lessonId, finalScore)
+
+                    // Wait a bit for the save to complete
+                    delay(1000) // Give it time to save
+
+                    // Also update in LessonViewModel for immediate UI updates
+                    lessonViewModel.updateQuizScore(score, questions.size)
+
+                    // Refresh progress data to update achievements
+                    progressViewModel.loadProgressData(userId)
+
+                    println("✅ QuizScreen: Progress saved successfully")
+                }
+            } catch (e: Exception) {
+                println("❌ QuizScreen: Error saving progress: ${e.message}")
+            } finally {
+                // Call completion callback regardless of save status
+                onQuizComplete(score, questions.size)
+                isSavingProgress = false
+            }
+        }
     }
 
     Scaffold(
@@ -77,13 +121,22 @@ fun QuizScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = if (showResults) "Quiz Results".cleanMarkdown() else "Lesson Quiz".cleanMarkdown(),
-                        style = MaterialTheme.typography.headlineMedium,
+                        text = "Quiz",
+                        style = AccessibilityManager.getScaledTitleLarge(),
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(
+                        onClick = {
+                            if (showResults) {
+                                onBack()
+                            } else {
+                                // Show confirmation dialog or just go back
+                                onBack()
+                            }
+                        }
+                    ) {
                         Icon(Icons.Filled.ArrowBack, "Back")
                     }
                 },
@@ -93,227 +146,254 @@ fun QuizScreen(
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            if (showResults) {
-                QuizResults(
-                    questions = questions,
-                    userAnswers = userAnswers,
-                    quizSubmitted = quizSubmitted,
-                    onComplete = { score, total ->
-                        quizSubmitted = true
-                        onQuizComplete(score, total)
-                    },
-                    onRetry = {
-                        // Reset quiz
-                        currentQuestionIndex = 0
-                        userAnswers = emptyMap()
-                        showResults = false
-                        quizSubmitted = false
-                    }
+        if (questions.isEmpty()) {
+            // No questions available
+            Column(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize()
+                    .padding(32.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    Icons.Filled.Quiz,
+                    contentDescription = "No Quiz",
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            } else if (currentQuestion == null) {
-                // No questions available
-                Column(
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "No Quiz Available",
+                    style = AccessibilityManager.getScaledTitleLarge(),
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "This lesson doesn't have a quiz yet, or the questions couldn't be loaded.",
+                    style = AccessibilityManager.getScaledBodyMedium(),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                AccessibleButton(onClick = onBack) {
+                    Text("Back to Lesson")
+                }
+            }
+        } else if (showResults) {
+            // Quiz Results Screen
+            QuizResultsScreen(
+                score = score,
+                totalQuestions = questions.size,
+                onBackToLesson = onBack,
+                isSaving = isSavingProgress,
+                modifier = Modifier.padding(paddingValues)
+            )
+        } else {
+            // Active Quiz Screen
+            Column(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize()
+            ) {
+                // Progress Header
+                Card(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
                 ) {
-                    Icon(
-                        Icons.Filled.Close,
-                        contentDescription = "No questions",
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No questions available".cleanMarkdown(),
-                        style = MaterialTheme.typography.titleLarge,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "This lesson doesn't have any quiz questions yet.".cleanMarkdown(),
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(onClick = onBack) {
-                        Text("Return to Lesson".cleanMarkdown())
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Question ${currentQuestionIndex + 1} of ${questions.size}",
+                                style = AccessibilityManager.getScaledBodyMedium(),
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "${((currentQuestionIndex + 1).toDouble() / questions.size * 100).toInt()}%",
+                                style = AccessibilityManager.getScaledBodyMedium(),
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = (currentQuestionIndex + 1).toFloat() / questions.size.toFloat(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp),
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
-            } else {
-                // Quiz in progress
-                QuizInProgress(
-                    currentQuestion = currentQuestion,
-                    currentQuestionIndex = currentQuestionIndex,
-                    totalQuestions = questions.size,
-                    progress = progress,
-                    userAnswer = userAnswer,
-                    onAnswerSelected = { answerIndex ->
-                        userAnswers = userAnswers + (currentQuestion.questionId to answerIndex)
-                    },
-                    onPrevious = {
-                        if (currentQuestionIndex > 0) {
-                            currentQuestionIndex--
-                        }
-                    },
-                    onNext = {
-                        if (currentQuestionIndex < questions.size - 1) {
-                            currentQuestionIndex++
-                        } else {
-                            showResults = true
-                        }
-                    },
-                    canGoBack = currentQuestionIndex > 0,
-                    canGoForward = userAnswer != null,
-                    isLastQuestion = currentQuestionIndex == questions.size - 1
-                )
+
+                // Question Content
+                if (currentQuestion != null) {
+                    QuestionContent(
+                        question = currentQuestion,
+                        selectedAnswer = selectedAnswer,
+                        onAnswerSelected = { selectedAnswer = it },
+                        onNext = {
+                            // Save answer
+                            val newAnswers = userAnswers.toMutableList()
+                            if (newAnswers.size > currentQuestionIndex) {
+                                newAnswers[currentQuestionIndex] = selectedAnswer
+                            } else {
+                                newAnswers.add(selectedAnswer)
+                            }
+                            userAnswers = newAnswers
+
+                            // Check if answer is correct
+                            if (selectedAnswer == currentQuestion.correctAnswer) {
+                                score++
+                            }
+
+                            // Move to next question or show results
+                            if (currentQuestionIndex < questions.size - 1) {
+                                currentQuestionIndex++
+                                selectedAnswer = userAnswers.getOrNull(currentQuestionIndex) ?: -1
+                            } else {
+                                showResults = true
+                            }
+                        },
+                        isLastQuestion = currentQuestionIndex == questions.size - 1,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 16.dp)
+                    )
+                } else {
+                    // Error state
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Loading question...",
+                            style = AccessibilityManager.getScaledBodyMedium()
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun QuizInProgress(
-    currentQuestion: QuizQuestion,
-    currentQuestionIndex: Int,
-    totalQuestions: Int,
-    progress: Float,
-    userAnswer: Int?,
+fun QuestionContent(
+    question: QuizQuestion,
+    selectedAnswer: Int,
     onAnswerSelected: (Int) -> Unit,
-    onPrevious: () -> Unit,
     onNext: () -> Unit,
-    canGoBack: Boolean,
-    canGoForward: Boolean,
-    isLastQuestion: Boolean
+    isLastQuestion: Boolean,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Progress header
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                // Progress indicator
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Question ${currentQuestionIndex + 1} of $totalQuestions".cleanMarkdown(),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "${(progress * 100).toInt()}%".cleanMarkdown(),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                LinearProgressIndicator(
-                    progress = progress,
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-
-        // Question card
+        // Question Card
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
+            Column(
+                modifier = Modifier.padding(20.dp)
+            ) {
                 Text(
-                    text = currentQuestion.question.cleanMarkdown(),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    lineHeight = MaterialTheme.typography.titleLarge.lineHeight * 1.1
+                    text = "Question",
+                    style = AccessibilityManager.getScaledBodySmall(),
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = question.question,
+                    style = AccessibilityManager.getScaledTitleMedium(),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        // Options Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Select your answer:",
+                    style = AccessibilityManager.getScaledBodyMedium(),
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 12.dp)
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Options
-                currentQuestion.options.forEachIndexed { index, option ->
-                    QuizOption(
-                        option = option.cleanMarkdown(),
-                        index = index,
-                        isSelected = userAnswer == index,
+                question.options.forEachIndexed { index, option ->
+                    AnswerOption(
+                        text = option,
+                        isSelected = selectedAnswer == index,
                         onClick = { onAnswerSelected(index) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 6.dp)
+                            .padding(vertical = 4.dp)
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Navigation buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+        // Next Button
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
         ) {
-            Button(
-                onClick = onPrevious,
-                enabled = canGoBack,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            ) {
-                Text(if (canGoBack) "Previous".cleanMarkdown() else "Cancel".cleanMarkdown())
-            }
-
-            Button(
+            AccessibleButton(
                 onClick = onNext,
-                enabled = canGoForward,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
+                modifier = Modifier.fillMaxWidth(),
+                enabled = selectedAnswer != -1
             ) {
-                Text(if (isLastQuestion) "Finish Quiz".cleanMarkdown() else "Next Question".cleanMarkdown())
+                Text(
+                    text = if (isLastQuestion) "Finish Quiz" else "Next Question",
+                    style = AccessibilityManager.getScaledBodyMedium()
+                )
             }
         }
     }
 }
 
 @Composable
-fun QuizOption(
-    option: String,
-    index: Int,
+fun AnswerOption(
+    text: String,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val optionLetters = listOf("A", "B", "C", "D")
-
     Card(
-        modifier = modifier.clickable { onClick() },
+        modifier = modifier
+            .clickable { onClick() },
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 8.dp else 2.dp
+            defaultElevation = if (isSelected) 4.dp else 2.dp
         ),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+            else MaterialTheme.colorScheme.surface
         )
     ) {
         Row(
@@ -322,351 +402,261 @@ fun QuizOption(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Option letter indicator
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = if (isSelected) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    }
-                ),
-                modifier = Modifier.size(40.dp)
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = optionLetters.getOrElse(index) { "" },
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.size(16.dp))
-
-            // Option text
-            Text(
-                text = option,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f),
-                lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.2
-            )
-
-            // Selection indicator
             RadioButton(
                 selected = isSelected,
                 onClick = onClick
             )
+            Spacer(modifier = Modifier.size(12.dp))
+            Text(
+                text = text,
+                style = AccessibilityManager.getScaledBodyMedium(),
+                modifier = Modifier.weight(1f),
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
+                else MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
 
 @Composable
-fun QuizResults(
-    questions: List<QuizQuestion>,
-    userAnswers: Map<String, Int>,
-    quizSubmitted: Boolean,
-    onComplete: (score: Int, total: Int) -> Unit,
-    onRetry: () -> Unit
+fun QuizResultsScreen(
+    score: Int,
+    totalQuestions: Int,
+    onBackToLesson: () -> Unit,
+    isSaving: Boolean = false,
+    modifier: Modifier = Modifier
 ) {
-    val score = questions.count { question ->
-        userAnswers[question.questionId] == question.correctAnswer
-    }
-    val total = questions.size
-    val percentage = if (total > 0) (score.toDouble() / total * 100).toInt() else 0
-
-    // Calculate performance rating
-    val performance = when {
-        percentage >= 90 -> "Excellent! 🎉"
-        percentage >= 75 -> "Great Job! 👍"
-        percentage >= 60 -> "Good Work! 👏"
-        else -> "Keep Practicing! 💪"
-    }
-
-    // Trigger completion callback
-    LaunchedEffect(Unit) {
-        if (!quizSubmitted) {
-            onComplete(score, total)
-        }
-    }
+    val percentage = (score.toDouble() / totalQuestions * 100).toInt()
+    val isPassing = percentage >= 70
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
+            .padding(16.dp)
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Results summary card
+        // Results Header
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
+                containerColor = if (isPassing) MaterialTheme.colorScheme.primaryContainer
+                else MaterialTheme.colorScheme.errorContainer
             )
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Result icon based on performance
-                Icon(
-                    imageVector = if (percentage >= 70) Icons.Filled.ThumbUp else Icons.Filled.Star,
-                    contentDescription = "Quiz Result",
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(60.dp),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Saving your progress...",
+                        style = AccessibilityManager.getScaledBodyMedium(),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                } else {
+                    Text(
+                        text = if (isPassing) "🎉 Quiz Complete!" else "📝 Quiz Complete",
+                        style = AccessibilityManager.getScaledTitleLarge(),
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    // Score Circle
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(120.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            progress = percentage.toFloat() / 100f,
+                            modifier = Modifier.size(120.dp),
+                            color = if (isPassing) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.error,
+                            strokeWidth = 8.dp
+                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "$percentage%",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isPassing) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.error
+                            )
+                            Text(
+                                text = "$score/$totalQuestions",
+                                style = AccessibilityManager.getScaledBodySmall(),
+                                color = if (isPassing) MaterialTheme.colorScheme.onPrimaryContainer
+                                else MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
 
-                Text(
-                    text = "Quiz Complete!".cleanMarkdown(),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = if (isPassing) "Great job! You've passed the quiz."
+                        else "Good effort! Review the material and try again.",
+                        style = AccessibilityManager.getScaledBodyMedium(),
+                        textAlign = TextAlign.Center,
+                        color = if (isPassing) MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+        }
 
-                Spacer(modifier = Modifier.height(8.dp))
+        if (!isSaving) {
+            // Performance Feedback
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp)
+                ) {
+                    Text(
+                        text = "Performance Summary",
+                        style = AccessibilityManager.getScaledTitleMedium(),
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
 
-                Text(
-                    text = performance.cleanMarkdown(),
-                    style = MaterialTheme.typography.titleLarge,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                    PerformanceMetric(
+                        label = "Correct Answers",
+                        value = "$score out of $totalQuestions",
+                        color = MaterialTheme.colorScheme.primary
+                    )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    PerformanceMetric(
+                        label = "Success Rate",
+                        value = "$percentage%",
+                        color = if (isPassing) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.error
+                    )
 
-                // Score display
+                    PerformanceMetric(
+                        label = "Passing Grade",
+                        value = if (isPassing) "Achieved ✓" else "Not Achieved",
+                        color = if (isPassing) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            // Progress Saved Notice
+            if (isPassing) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
                     )
                 ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Your Score".cleanMarkdown(),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium
+                        Icon(
+                            Icons.Filled.Circle,
+                            contentDescription = "Saved",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
                         )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
+                        Spacer(modifier = Modifier.size(12.dp))
                         Text(
-                            text = "$score/$total".cleanMarkdown(),
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Text(
-                            text = "$percentage%".cleanMarkdown(),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Medium
+                            text = "Your quiz score has been saved to your progress",
+                            style = AccessibilityManager.getScaledBodySmall(),
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Performance message
-                Text(
-                    text = when {
-                        percentage == 100 -> "Perfect score! You've mastered this topic! 🌟"
-                        percentage >= 80 -> "Outstanding! You have a great understanding of this material."
-                        percentage >= 60 -> "Good work! You understand the main concepts well."
-                        else -> "Don't worry! Review the material and try again. Learning takes practice!"
-                    }.cleanMarkdown(),
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
-                )
             }
-        }
 
-        // Detailed review section
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Text(
-                    text = "📋 Question Review".cleanMarkdown(),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+            // Action Buttons
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                AccessibleButton(
+                    onClick = onBackToLesson,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
                 ) {
-                    questions.forEachIndexed { index, question ->
-                        QuestionReviewItem(
-                            question = question,
-                            questionNumber = index + 1,
-                            userAnswer = userAnswers[question.questionId],
-                            isCorrect = userAnswers[question.questionId] == question.correctAnswer
+                    Text(
+                        text = "Back to Lesson",
+                        style = AccessibilityManager.getScaledBodyMedium()
+                    )
+                }
+
+                if (!isPassing) {
+                    Button(
+                        onClick = { /* TODO: Implement retry quiz */ },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
                         )
+                    ) {
+                        Text("Try Again")
                     }
                 }
             }
-        }
 
-        // Action buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Button(
-                onClick = onRetry,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
-                )
-            ) {
-                Text("Try Again".cleanMarkdown())
-            }
-
-            Button(
-                onClick = { /* Navigate back to lesson */ },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Text("Back to Lesson".cleanMarkdown())
-            }
+            // Encouragement Message
+            Text(
+                text = getQuizEncouragement(percentage),
+                style = AccessibilityManager.getScaledBodyMedium(),
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
         }
     }
 }
 
 @Composable
-fun QuestionReviewItem(
-    question: QuizQuestion,
-    questionNumber: Int,
-    userAnswer: Int?,
-    isCorrect: Boolean
+fun PerformanceMetric(
+    label: String,
+    value: String,
+    color: androidx.compose.ui.graphics.Color
 ) {
-    val optionLetters = listOf("A", "B", "C", "D")
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isCorrect) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            } else {
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
-            }
-        )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Question header with result indicator
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Correct/incorrect indicator
-                Icon(
-                    imageVector = if (isCorrect) Icons.Filled.Check else Icons.Filled.Close,
-                    contentDescription = if (isCorrect) "Correct" else "Incorrect",
-                    tint = if (isCorrect) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(20.dp)
-                )
+        Text(
+            text = label,
+            style = AccessibilityManager.getScaledBodyMedium(),
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = value,
+            style = AccessibilityManager.getScaledBodyMedium(),
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
+    }
+}
 
-                Spacer(modifier = Modifier.size(8.dp))
-
-                Text(
-                    text = "Question $questionNumber".cleanMarkdown(),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isCorrect) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.error
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Question text
-            Text(
-                text = question.question.cleanMarkdown(),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // User's answer
-            Column {
-                Text(
-                    text = "Your answer:".cleanMarkdown(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                val userAnswerText = if (userAnswer != null) {
-                    "${optionLetters[userAnswer]}. ${question.options[userAnswer].cleanMarkdown()}"
-                } else {
-                    "Not answered"
-                }
-
-                Text(
-                    text = userAnswerText,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (isCorrect) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.error
-                )
-            }
-
-            // Correct answer (if incorrect)
-            if (!isCorrect) {
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Column {
-                    Text(
-                        text = "Correct answer:".cleanMarkdown(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Text(
-                        text = "${optionLetters[question.correctAnswer]}. ${question.options[question.correctAnswer].cleanMarkdown()}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            // Explanation (if available)
-            if (question.explanation.isNotBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Text(
-                        text = "💡 ${question.explanation.cleanMarkdown()}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(12.dp)
-                    )
-                }
-            }
-        }
+private fun getQuizEncouragement(percentage: Int): String {
+    return when {
+        percentage >= 90 -> "Outstanding! You've mastered this material. 🎯"
+        percentage >= 80 -> "Excellent work! You have a strong understanding. 💪"
+        percentage >= 70 -> "Good job! You've passed the quiz. 👍"
+        percentage >= 60 -> "Almost there! Review the material and try again. 📚"
+        else -> "Keep learning! Review the lesson and try the quiz again. 🌟"
     }
 }

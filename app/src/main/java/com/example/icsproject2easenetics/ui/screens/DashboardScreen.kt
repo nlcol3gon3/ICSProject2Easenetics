@@ -29,7 +29,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -58,6 +57,7 @@ import com.example.icsproject2easenetics.ui.viewmodels.UserViewModel
 import com.example.icsproject2easenetics.ui.viewmodels.AuthViewModel
 import com.example.icsproject2easenetics.ui.viewmodels.ModuleViewModel
 import com.example.icsproject2easenetics.ui.viewmodels.LessonViewModel
+import com.example.icsproject2easenetics.ui.viewmodels.ProgressViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,7 +72,8 @@ fun DashboardScreen(
     authViewModel: AuthViewModel = viewModel(),
     userViewModel: UserViewModel = viewModel(),
     moduleViewModel: ModuleViewModel = viewModel(),
-    lessonViewModel: LessonViewModel = viewModel()
+    lessonViewModel: LessonViewModel = viewModel(),
+    progressViewModel: ProgressViewModel = viewModel()
 ) {
     // Get current user
     val currentUser by authViewModel.currentUser.collectAsState()
@@ -89,7 +90,12 @@ fun DashboardScreen(
     val modulesLoading by moduleViewModel.isLoading.collectAsState()
     val modulesError by moduleViewModel.errorMessage.collectAsState()
 
-    // Extract first name from user's email or display name - USING UTILITY FUNCTION
+    // Get progress and achievements data
+    val learningStats by progressViewModel.learningStats.collectAsState()
+    val achievements by progressViewModel.achievements.collectAsState()
+    val progressLoading by progressViewModel.isLoading.collectAsState()
+
+    // Extract first name from user's email or display name
     val firstName = extractUserName(currentUser)
 
     // Menu state
@@ -109,6 +115,9 @@ fun DashboardScreen(
 
             // Load modules and lessons from Firebase
             moduleViewModel.loadAllModules()
+
+            // Load progress data and achievements
+            progressViewModel.loadProgressData(userId)
         }
     }
 
@@ -131,7 +140,11 @@ fun DashboardScreen(
         availableLessons = availableLessons
     )
 
-    val isLoading = userLoading || modulesLoading
+    // Calculate unlocked achievements count
+    val unlockedAchievements = achievements.count { it.unlocked }
+    val totalAchievements = achievements.size
+
+    val isLoading = userLoading || modulesLoading || progressLoading
     val hasError = userError != null || modulesError != null
 
     Scaffold(
@@ -267,9 +280,6 @@ fun DashboardScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
-        },
-        floatingActionButton = {
-            // Removed the chatbot FAB since it's now in the menu
         }
     ) { paddingValues ->
         if (isLoading) {
@@ -289,7 +299,7 @@ fun DashboardScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "📊 Loading modules and lessons",
+                    text = "📊 Loading modules, lessons, and progress data",
                     style = AccessibilityManager.getScaledBodySmall(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -334,6 +344,7 @@ fun DashboardScreen(
                                     userViewModel.loadUserProgress(userId)
                                     userViewModel.loadAvailableLessons()
                                     moduleViewModel.loadAllModules()
+                                    progressViewModel.loadProgressData(userId)
                                 }
                             }
                         ) {
@@ -385,6 +396,26 @@ fun DashboardScreen(
                                 DashboardStat("Modules", "${modules.size}")
                                 DashboardStat("Lessons", "$totalLessons")
                                 DashboardStat("Completed", "$completedLessons")
+                                DashboardStat("Achievements", "$unlockedAchievements/$totalAchievements")
+                            }
+
+                            // Motivational message based on progress
+                            learningStats?.let { stats ->
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                    )
+                                ) {
+                                    Text(
+                                        text = progressViewModel.getMotivationalMessage(),
+                                        modifier = Modifier.padding(12.dp),
+                                        style = AccessibilityManager.getScaledBodySmall(),
+                                        textAlign = TextAlign.Center,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                }
                             }
                         }
                     }
@@ -424,6 +455,39 @@ fun DashboardScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
                                 )
+                            }
+                        }
+                    }
+
+                    // Current streak display
+                    learningStats?.let { stats ->
+                        if (stats.currentStreak > 0) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "🔥 Current Streak",
+                                        style = AccessibilityManager.getScaledBodyMedium(),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = "${stats.currentStreak} days",
+                                        style = AccessibilityManager.getScaledBodyMedium(),
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
                     }
@@ -481,6 +545,63 @@ fun DashboardScreen(
                             onClick = onGamesClick,
                             modifier = Modifier.weight(1f)
                         )
+                    }
+                }
+
+                // Recent Achievements Section
+                if (unlockedAchievements > 0) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Recent Achievements",
+                                        style = AccessibilityManager.getScaledTitleLarge(),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "$unlockedAchievements/$totalAchievements",
+                                        style = AccessibilityManager.getScaledBodyMedium(),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                // Show recent unlocked achievements (max 3)
+                                val recentAchievements = achievements
+                                    .filter { it.unlocked }
+                                    .take(3)
+
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    recentAchievements.forEach { achievement ->
+                                        AchievementRow(achievement = achievement)
+                                    }
+                                }
+
+                                if (unlockedAchievements > 3) {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    AccessibleButton(
+                                        onClick = onProgressClick,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("View All Achievements")
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -620,7 +741,6 @@ fun DashboardScreen(
     }
 }
 
-// Quick Access Card Component
 @Composable
 fun QuickAccessCard(
     title: String,
@@ -657,6 +777,63 @@ fun QuickAccessCard(
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center
             )
+        }
+    }
+}
+
+@Composable
+fun AchievementRow(achievement: com.example.icsproject2easenetics.data.models.Achievement) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Achievement Icon
+            Text(
+                text = achievement.iconRes,
+                style = AccessibilityManager.getScaledTitleMedium(),
+                modifier = Modifier.padding(end = 12.dp)
+            )
+
+            // Achievement Info
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = achievement.title,
+                    style = AccessibilityManager.getScaledBodyMedium(),
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = achievement.description,
+                    style = AccessibilityManager.getScaledBodySmall(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Progress indicator for in-progress achievements
+            if (!achievement.unlocked && achievement.target > 1) {
+                Text(
+                    text = "${achievement.currentProgress}/${achievement.target}",
+                    style = AccessibilityManager.getScaledBodySmall(),
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            } else if (achievement.unlocked) {
+                Text(
+                    text = "✓",
+                    style = AccessibilityManager.getScaledBodyMedium(),
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
