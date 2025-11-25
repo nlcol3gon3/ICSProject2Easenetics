@@ -28,7 +28,6 @@ class GoogleAIChatService(private val apiKey: String) {
         var retryCount = 0
         val maxRetries = 2
 
-        // Try each endpoint with retries
         for (endpoint in endpoints) {
             while (retryCount <= maxRetries) {
                 try {
@@ -105,12 +104,11 @@ class GoogleAIChatService(private val apiKey: String) {
                         lastError = "❌ $errorMessage (Code: ${response.code})"
                         println(lastError)
 
-                        // If it's a temporary error (503, 429), retry after a short delay
                         if (response.code == 503 || response.code == 429) {
                             retryCount++
                             if (retryCount <= maxRetries) {
                                 println("🔄 Retrying in 2 seconds...")
-                                kotlinx.coroutines.delay(2000) // Wait 2 seconds before retry
+                                kotlinx.coroutines.delay(2000)
                                 continue
                             }
                         }
@@ -125,12 +123,11 @@ class GoogleAIChatService(private val apiKey: String) {
                         kotlinx.coroutines.delay(2000)
                     }
                 }
-                break // Move to next endpoint
+                break
             }
-            retryCount = 0 // Reset retry count for next endpoint
+            retryCount = 0
         }
 
-        // If all endpoints fail, return a friendly error message with formatting
         return@withContext ChatbotResponse(
             message = "# Service Temporarily Unavailable\n\nI'm experiencing high demand right now. Please try again in a moment.\n\n## What you can do:\n- **Try asking your question again** in a few minutes\n- **Check your internet connection**\n- **Try a simpler question** if possible\n\nI'll be back to help you learn as soon as possible!",
             suggestedLessons = emptyList(),

@@ -1,4 +1,3 @@
-// Create new file: GameProgressRepository.kt
 package com.example.icsproject2easenetics.data.repositories
 
 import com.example.icsproject2easenetics.data.models.UserGameProgress

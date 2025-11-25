@@ -159,7 +159,6 @@ fun AppNavigation(context: Context) {
             )
         }
 
-// In the games composable, add explicit type
         composable("games") {
             GamesScreen(
                 onBack = { navController.popBackStack() },

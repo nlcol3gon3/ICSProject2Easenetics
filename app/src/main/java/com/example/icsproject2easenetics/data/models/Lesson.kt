@@ -3,9 +3,9 @@ package com.example.icsproject2easenetics.data.models
 // Quiz data
 data class Lesson(
     val lessonId: String = "",
-    val moduleId: String = "", // ADD THIS
+    val moduleId: String = "",
     val title: String = "",
-    val objective: String = "", // ADD THIS
+    val objective: String = "",
     val description: String = "",
     val content: String = "",
     val videoUrl: String? = null,

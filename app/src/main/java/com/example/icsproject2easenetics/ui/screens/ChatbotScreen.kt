@@ -133,7 +133,6 @@ fun ChatbotScreen(
                                     viewModel.clearChatHistory()
                                 },
                                 leadingIcon = {
-                                    // Icon is already in the text for better alignment
                                 }
                             )
                         }
@@ -481,7 +480,6 @@ fun ThinkingIndicator() {
     }
 }
 
-// Quick questions composable (you can add this later)
 @Composable
 fun QuickQuestionsSection(
     questions: List<String>,

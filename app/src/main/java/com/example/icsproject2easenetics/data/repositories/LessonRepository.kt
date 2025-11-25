@@ -86,7 +86,7 @@ class LessonRepository {
         }
     }
 
-    // Add this method to fix the LessonViewModel error
+
     suspend fun getLessonById(lessonId: String): Lesson? {
         return try {
             println("🔍 LessonRepository: Fetching lesson by ID: $lessonId")

@@ -176,8 +176,6 @@ class ProgressService {
     }
 
     suspend fun getWeeklyProgress(userId: String): List<WeeklyProgress> {
-        // Implement weekly progress calculation
-        // For now, return empty list - you can implement this based on your needs
         return emptyList()
     }
 }

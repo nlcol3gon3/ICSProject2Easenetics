@@ -882,13 +882,11 @@ private fun getFeaturedLessons(
         userProgress.none { it.lessonId == lesson.lessonId }
     }
 
-    // Return mix: 1 completed, 1 in-progress, 2 new (or whatever available)
     return (completedLessons.take(1) + inProgressLessons.take(1) + newLessons.take(2))
         .take(4)
         .distinctBy { it.lessonId }
 }
 
-// Composable for dashboard statistics
 @Composable
 private fun DashboardStat(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -906,7 +904,6 @@ private fun DashboardStat(label: String, value: String) {
     }
 }
 
-// Composable for module progress row
 @Composable
 private fun ModuleProgressRow(moduleName: String, completed: Int, total: Int) {
     Row(

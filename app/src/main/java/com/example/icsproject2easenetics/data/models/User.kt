@@ -8,7 +8,7 @@ data class User(
     val email: String = "",
     val createdAt: Date = Date(),
     var lastLogin: Date = Date(),
-    var accessibilitySettings: AccessibilitySettings = AccessibilitySettings(), // Use the one from AccessibilitySettings.kt
+    var accessibilitySettings: AccessibilitySettings = AccessibilitySettings(),
     var mfaEnabled: Boolean = false,
     var phoneNumber: String? = null,
     var phoneVerified: Boolean = false,

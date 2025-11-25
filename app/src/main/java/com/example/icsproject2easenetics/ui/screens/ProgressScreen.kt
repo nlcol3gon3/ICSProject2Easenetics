@@ -571,7 +571,7 @@ fun StatisticsTab(
                 title = "Total Learning Time",
                 value = formatLearningTime(stats.totalLearningTime),
                 description = "Time spent on lessons and quizzes",
-                progress = minOf(stats.totalLearningTime.toFloat() / 600f, 1f) // Cap at 10 hours
+                progress = minOf(stats.totalLearningTime.toFloat() / 600f, 1f)
             )
 
             // Streak Statistics

@@ -70,7 +70,6 @@ fun AccessibilityScreen(
     // Show success message
     LaunchedEffect(saveSuccess) {
         if (saveSuccess) {
-            // Auto-hide success message after 3 seconds
             kotlinx.coroutines.delay(3000)
             viewModel.clearSaveSuccess()
         }

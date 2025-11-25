@@ -92,7 +92,6 @@ fun FormattedTextComposer(text: String) {
             }
         }
 
-        // Render any remaining list items
         if (currentListItems.isNotEmpty()) {
             renderListItems(currentListItems)
         }
@@ -149,13 +148,11 @@ fun BoldFormattedText(text: String) {
                 // Update current text
                 currentText = afterStart.substring(endIndex + 2)
             } else {
-                // No closing ** found, just add the rest as normal
                 append("**$afterStart")
                 currentText = ""
             }
         }
 
-        // Add any remaining text
         if (currentText.isNotEmpty()) {
             append(currentText)
         }

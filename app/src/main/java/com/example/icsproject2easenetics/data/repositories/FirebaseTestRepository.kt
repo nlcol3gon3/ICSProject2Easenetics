@@ -23,9 +23,8 @@ class FirebaseTestRepository @Inject constructor(
                 .set(testData)
                 .await()
 
-            // Test Auth service availability
-            // Even if no user is logged in, the auth service should be available
-            auth.app.name // This will throw if auth isn't initialized
+
+            auth.app.name
 
             true
         } catch (e: Exception) {

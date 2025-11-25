@@ -57,7 +57,7 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    // Observe authentication state - FIXED: Added collectAsState()
+    // Observe authentication state
     val currentUser by viewModel.currentUser.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -74,7 +74,7 @@ fun LoginScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "Login to Easenetics", // FIXED: Added 'text =' parameter
+                        text = "Login to Easenetics",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )

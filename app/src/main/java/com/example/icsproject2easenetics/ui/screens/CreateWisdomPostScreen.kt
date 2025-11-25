@@ -278,7 +278,6 @@ fun CreateWisdomPostScreen(
                 }
             }
 
-            // Debug info (only show in development)
             if (false) { // Set to true for debugging
                 Card(
                     modifier = Modifier.fillMaxWidth(),

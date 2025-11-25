@@ -16,7 +16,6 @@ object MarkdownParser {
             .trim()
     }
 
-    // Advanced version that preserves formatting for Compose
     fun parseToAnnotatedString(text: String): androidx.compose.ui.text.AnnotatedString {
         return buildAnnotatedString {
             val lines = text.split("\n")

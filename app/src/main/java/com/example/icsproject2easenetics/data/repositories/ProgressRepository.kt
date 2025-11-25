@@ -1,4 +1,3 @@
-// data/repositories/ProgressRepository.kt
 package com.example.icsproject2easenetics.data.repositories
 
 import com.example.icsproject2easenetics.data.models.UserProgress
@@ -124,14 +123,13 @@ class ProgressRepository @Inject constructor() {
             val progressId = generateProgressId(userId, lessonId)
             println("🔄 ProgressRepository: Updating quiz score - ID: $progressId, User: $userId, Lesson: $lessonId, Score: $score")
 
-            // First get existing progress to preserve completion status
             val existingProgress = getProgressForLesson(userId, lessonId)
 
             val progress = UserProgress(
                 progressId = progressId,
                 userId = userId,
                 lessonId = lessonId,
-                completed = existingProgress?.completed ?: (score >= 70), // Auto-complete if score is good
+                completed = existingProgress?.completed ?: (score >= 70),
                 score = score,
                 timeSpent = existingProgress?.timeSpent ?: 0,
                 lastAccessed = System.currentTimeMillis()

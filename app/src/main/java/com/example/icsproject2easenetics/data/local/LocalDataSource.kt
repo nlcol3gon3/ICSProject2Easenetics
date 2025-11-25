@@ -189,9 +189,6 @@ object LocalDataSource {
 
     // FIXED: Remove or fix the getLessonsByCategory function
     fun getLessonsByCategory(category: LessonCategory): List<Lesson> {
-        // Since we're using modules now, you might want to:
-        // Option 1: Remove this function entirely if not needed
-        // Option 2: Map modules to categories
         return when (category) {
             LessonCategory.SMARTPHONE_BASICS -> lessons.filter { it.moduleId == "module_1" }
             LessonCategory.INTERNET_BROWSING -> lessons.filter { it.moduleId == "module_4" }
@@ -209,10 +206,10 @@ object LocalDataSource {
 
     // Get quiz questions for a lesson
     fun getQuizQuestions(lessonId: String): List<QuizQuestion> {
-        // For now, return sample questions based on lessonId
+
         return when (lessonId) {
-            "lesson_1_1" -> quizQuestions.take(2) // First two questions for lesson 1_1
-            "lesson_3_1" -> quizQuestions.takeLast(1) // Last question for lesson 3_1
+            "lesson_1_1" -> quizQuestions.take(2)
+            "lesson_3_1" -> quizQuestions.takeLast(1)
             "lesson_smartphone_basics" -> quizQuestions.take(2) // For backward compatibility
             else -> emptyList()
         }

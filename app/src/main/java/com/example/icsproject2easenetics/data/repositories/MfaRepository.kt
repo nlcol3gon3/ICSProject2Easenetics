@@ -24,8 +24,6 @@ class MfaRepository @Inject constructor(private val firebaseAuth: FirebaseAuth) 
 
     suspend fun enableMfa(user: FirebaseUser): Result<Boolean> {
         return try {
-            // Firebase doesn't have direct MFA enablement for email/password users
-            // We'll handle this at application level
             Result.success(true)
         } catch (e: Exception) {
             Result.failure(e)
