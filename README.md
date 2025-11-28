@@ -29,7 +29,7 @@
 
 **Easenetics** is an accessibility-first Android application designed to facilitate autonomous digital skill acquisition for older adults (aged 60+). 
 
-Unlike standard tutorial apps, Easenetics recognizes that the "digital divide" is often a cognitive divide. Grounded in **User-Centered Design (UCD)** principles, the system addresses age-related barriers—such as declining working memory and motor dexterity—by integrating **Generative AI** for real-time mentorship and **Gamified Cognitive Exercises** for mental reinforcement.
+Unlike standard tutorial apps, Easenetics recognizes that the "digital divide" is often a cognitive divide. Grounded in **User-Centered Design (UCD)** principles, the system addresses age-related barriers such as declining working memory and motor dexterity by integrating **Generative AI** for real-time assistance and usage, and **gamified cognitive exercises** for mental reinforcement.
 
 The project was developed as a final-year Capstone to demonstrate how **Human-Computer Interaction (HCI)** and **Artificial Intelligence** can be harmonized to create inclusive technology.
 
