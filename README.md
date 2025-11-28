@@ -1,6 +1,5 @@
 <div align="center">
 
-  <img src="https://via.placeholder.com/150?text=Easenetics+Logo" alt="Easenetics Logo" width="120" height="120">
 
   # Easenetics
   ### Bridging the Digital Divide for the Aging Population
