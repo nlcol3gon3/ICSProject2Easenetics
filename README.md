@@ -10,7 +10,7 @@
     <img src="https://img.shields.io/badge/Language-Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Kotlin">
     <img src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?style=for-the-badge&logo=android&logoColor=white" alt="Jetpack Compose">
     <img src="https://img.shields.io/badge/Backend-Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" alt="Firebase">
-    <img src="https://img.shields.io/badge/AI-Dialogflow%20%2F%20Gemini-FF9800?style=for-the-badge&logo=google-cloud&logoColor=white" alt="Dialogflow">
+    <img src="https://img.shields.io/badge/AI-Dialogflow%20%2F%20Gemini-FF9800?style=for-the-badge&logo=google-cloud&logoColor=white" alt="Google AI Studio">
     <img src="https://img.shields.io/badge/Status-Completed-success?style=for-the-badge" alt="Status">
   </p>
 
